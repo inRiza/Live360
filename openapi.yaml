@@ -1,0 +1,710 @@
+openapi: 3.0.3
+info:
+  title: Android OpenApi Doc
+  version: "1.0"
+  description: |
+    Dokumentasi Kontrak REST API Android 
+    Menggunakan prefix 'api/auth' untuk autentikasi dan 'api/v1' untuk fitur fitur lain yang dikembangkan dari Milestone 1
+    version: 1.0
+  contact:
+    name: JWB (JowoBorots)
+
+servers:
+  - url: https://mad.labpro.hmif.dev
+    description: Production Server [dari asisten]
+  - url: http://localhost:3000
+    description: Development Server [Server bun secara lokal]
+
+tags:
+  - name: Authentication
+    description: Endpoint masuk/daftar/keluar akun
+  - name: Families
+    description: Family feature
+
+    # ------------------------------------------------------------
+    # API AUTH: LOGIN
+    # ------------------------------------------------------------
+
+paths:
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: "Masuk ke Akun Pengguna"
+      description: "Kirim kredensial untuk mendapatkan token akses"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  example: "13523158@std.stei.itb.ac.id"
+                password:
+                  type: string
+                  format: password
+                  example: "13523158"
+
+      responses:
+        "200":
+          description: "Berhasil Login"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+#                  status:
+#                    type: string
+#                    example: "success"
+#                  message:
+#                    type: string
+#                    example: "Login berhasil! Anda akan diarahkan ke halaman utama"
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey" #bcrypt intinya
+                      expiresAt:
+                        type: string
+                        format: date-time
+                        example: "2026-03-15T10:00:00Z"
+                      user:
+                        $ref: '#/components/schemas/User'
+        "400": # ini kalo salah format / field ada yg kosong, jadi datanya berantakan pas req
+          $ref: "#/components/responses/BadRequest"
+        "401": # salah password atau token expired
+          $ref: "#/components/responses/Unauthorized"
+        "404": # kalo salah url, endpointnya gk ada
+          $ref: "#/components/responses/NotFound"
+        "500": # database connection error + backend bugs
+          $ref: "#/components/responses/InternalServerError"
+        "503": # maintenance
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    # ------------------------------------------------------------
+    # API AUTH: GET USER PROFILE
+    # ------------------------------------------------------------
+
+  /api/v1/me:
+    get:
+      tags:
+        - Authentication
+      summary: "Get Profile"
+      description: "Mengambil informasi profil pengguna yang sedang login."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: "Berhasil mengambil data profil"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+#                  status:
+#                    type: string
+#                    example: "success"
+#                  message:
+#                    type: string
+#                    example: "Data profil pengguna berhasil diambil!"
+                  data:
+                    $ref: '#/components/schemas/UserWithTS'
+        "400": # ini kalo salah format / field ada yg kosong, jadi datanya berantakan pas req
+          $ref: "#/components/responses/BadRequest"
+        "401": #  token expired
+          $ref: "#/components/responses/Unauthorized"
+        "404": # kalo salah url, endpointnya gk ada
+          $ref: "#/components/responses/NotFound"
+        "500": # database connection error + backend bugs
+          $ref: "#/components/responses/InternalServerError"
+        "503": # maintenance
+          $ref: "#/components/responses/ServiceUnavailable"
+
+        # ------------------------------------------------------------
+        # API AUTH: UPDATE USER PROFILE
+        # ------------------------------------------------------------
+
+    patch:
+      tags:
+        - Authentication
+      summary: "Update Profil Pengguna"
+      description:
+        "Memperbarui nama lengkap pengguna yang sedang login."
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fullName
+              properties:
+                fullName:
+                  type: string
+                  example: "Lukas Raja Agripa"
+
+      responses:
+        "200":
+          description: "Update nama lengkap berhasil"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Update nama lengkap berhasil!"
+                  data:
+                    $ref: '#/components/schemas/UserWithTS'
+
+        "400": # ini kalo salah format / field ada yg kosong, jadi datanya berantakan pas req
+          $ref: "#/components/responses/BadRequest"
+        "401": #  token expired
+          $ref: "#/components/responses/Unauthorized"
+        "404": # kalo salah url, endpointnya gk ada
+          $ref: "#/components/responses/NotFound"
+        "500": # database connection error + backend bugs
+          $ref: "#/components/responses/InternalServerError"
+        "503": # maintenance
+          $ref: "#/components/responses/ServiceUnavailable"
+
+      # ------------------------------------------------------------
+      # API FAMILIES: GET ALL FAMILIES
+      # ------------------------------------------------------------
+
+  /api/v1/families:
+    get:
+      tags:
+        - Families
+      summary:
+        "Ambil Semua Family dari db"
+      description:
+        "Mengambil daftar seluruh family yang tersedia dengan informasi dasar seperti id, nama, icon.."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: "Berhasil mengambil daftar family"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+#                  status:
+#                    type: string
+#                    example: "success"
+#                  message:
+#                    type: string
+#                    example: "Data family berhasil diambil!"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FamilyBasic'
+
+        "400": # ini kalo salah format / field ada yg kosong, jadi datanya berantakan pas req
+          $ref: "#/components/responses/BadRequest"
+        "401": #  token expired
+          $ref: "#/components/responses/Unauthorized"
+        "404": # kalo salah url, endpointnya gk ada
+          $ref: "#/components/responses/NotFound"
+        "500": # database connection error + backend bugs
+          $ref: "#/components/responses/InternalServerError"
+        "503": # maintenance
+          $ref: "#/components/responses/ServiceUnavailable"
+          # ------------------------------------------------------------
+          # API FAMILIES: CREATE A FAMILY
+          # ------------------------------------------------------------
+
+    post:
+      tags:
+        - Families
+      summary: "Buat Family"
+      description: "Membuat family baru dengan nama dan icon yang dipilih pengguna. iconUrl yang valid terbatas sesuai spesifikasi sebelumnya"
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - iconUrl
+              properties:
+                name:
+                  type: string
+                  example: "JowoBorots Fam"
+                iconUrl:
+                  type: string
+                  example: "https://mad.labpro.hmif.dev/assets/family_icon_1.png"
+
+      responses:
+        "201":
+          description: "Berhasil membuat family"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+#                  status:
+#                    type: string
+#                    example: "success"
+#                  message:
+#                    type: string
+#                    example: "Berhasil membuat family dengan ID: {ID}"
+                  data:
+                    $ref: '#/components/schemas/FamilyDiscover'
+
+        "400": # ini kalo salah format / field ada yg kosong, jadi datanya berantakan pas req
+          $ref: "#/components/responses/BadRequest"
+        "401": #  token expired
+          $ref: "#/components/responses/Unauthorized"
+        "404": # kalo salah url, endpointnya gk ada
+          $ref: "#/components/responses/NotFound"
+        "500": # database connection error + backend bugs
+          $ref: "#/components/responses/InternalServerError"
+        "503": # maintenance
+          $ref: "#/components/responses/ServiceUnavailable"
+
+          # ------------------------------------------------------------
+          # API FAMILIES: GET ALL MY FAMILIES
+          # ------------------------------------------------------------
+
+  /api/v1/me/families:
+    get:
+      tags:
+        - Families
+      summary: "Ambil semua family yang diikuti"
+      description: "Mengambil daftar family yang diikuti oleh pengguna beserta detail anggota dan family code."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: "Berhasil mengambil daftar family yang diikuti"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+#                  status:
+#                    type: string
+#                    example: "success"
+#                  message:
+#                    type: string
+#                    example: "Berhasil mengambil daftar family yang diikuti"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FamilyDiscover'
+
+        "400": # ini kalo salah format / field ada yg kosong, jadi datanya berantakan pas req
+          $ref: "#/components/responses/BadRequest"
+        "401": #  token expired
+          $ref: "#/components/responses/Unauthorized"
+        "404": # kalo salah url, endpointnya gk ada
+          $ref: "#/components/responses/NotFound"
+        "500": # database connection error + backend bugs
+          $ref: "#/components/responses/InternalServerError"
+        "503": # maintenance
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  # ------------------------------------------------------------
+  # API FAMILIES: RANDOM FAMILIES
+  # ------------------------------------------------------------
+
+  /api/v1/families/discover:
+    get:
+      tags:
+        - Families
+      summary: "Getter 5 family acak, belum diikuti, informasi tersembunyi"
+      description: "Mengambil 5 family secara acak yang belum diikuti oleh pengguna dengan informasi anggota yang telah disensor."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: "Berhasil mengambil 5 family acak"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+#                  status:
+#                    type: string
+#                    example: "success"
+#                  message:
+#                    type: string
+#                    example: "Berhasil mengambil 5 family acak!"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FamilyDiscover' #----- DENGAN INFORMASI CENSORED, atur di .kt
+
+        "400": # ini kalo salah format / field ada yg kosong, jadi datanya berantakan pas req
+          $ref: "#/components/responses/BadRequest"
+        "401": #  token expired
+          $ref: "#/components/responses/Unauthorized"
+        "404": # kalo salah url, endpointnya gk ada
+          $ref: "#/components/responses/NotFound"
+        "500": # database connection error + backend bugs
+          $ref: "#/components/responses/InternalServerError"
+        "503": # maintenance
+          $ref: "#/components/responses/ServiceUnavailable"
+
+          # ------------------------------------------------------------
+          # API FAMILIES: GET DETAIL FAMILY
+          # ------------------------------------------------------------
+
+  /api/v1/families/{familyId}:
+    get:
+      tags:
+        - Families
+      parameters:
+        - name: familyId
+          in: path
+          required: true
+          schema: { type: integer }
+      summary: "Get Detail Family"
+      description: "Mengambil detail suatu family beserta daftar anggotanya. Informasi yang ditampilkan bergantung pada apakah pengguna merupakan anggota family tersebut."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: "Berhasil mengambil detail family"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+#                  status:
+#                    type: string
+#                    example: "success"
+#                  message:
+#                    type: string
+#                    example: "Berhasil mengambil detail family dengan ID: {ID}"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FamilyDiscover' #----- DENGAN INFORMASI DEPEND ON isMember atau ga, atur di .kt
+              examples:
+
+                ###### PERHATIKAN INI #####
+
+                bukan_member:
+                  summary: "Contoh Jika Bukan Member (Disensor)"
+                  value:
+                    data:
+                      id: 1
+                      name: "Jowoborotssss"
+                      iconUrl: "https://mad.labpro.hmif.dev/assets/family_icon_1.png"
+                      isMember: false
+                      createdAt: "2026-03-15T10:00:00Z"
+                      updatedAt: "2026-03-15T10:00:00Z"
+                      members:
+                        - fullName: "L**** R*** A*****"
+                        - email: "********@std.stei.itb.ac.id"
+                sudah_member:
+                  summary: "Contoh Jika Sudah Member (Lengkap)"
+                  value:
+                    data:
+                      id: 1
+                      name: "Jowoborots"
+                      iconUrl: "https://mad.labpro.hmif.dev/assets/family_icon_1.png"
+                      isMember: true
+                      familyCode: "ABC123"
+                      createdAt: "2026-03-15T10:00:00Z"
+                      updatedAt: "2026-03-15T10:00:00Z"
+                      members:
+                        - fullName: "Lukas Raja Agripa"
+                        - email: "13523158@std.stei.itb.ac.id"
+
+        "400": # ini kalo salah format / field ada yg kosong, jadi datanya berantakan pas req
+          $ref: "#/components/responses/BadRequest"
+        "401": #  token expired
+          $ref: "#/components/responses/Unauthorized"
+        "404": # kalo salah url, endpointnya gk ada
+          $ref: "#/components/responses/NotFound"
+        "500": # database connection error + backend bugs
+          $ref: "#/components/responses/InternalServerError"
+        "503": # maintenance
+          $ref: "#/components/responses/ServiceUnavailable"
+
+
+          # ------------------------------------------------------------
+          # API FAMILIES: JOIN FAMILY
+          # ------------------------------------------------------------
+
+
+  /api/v1/families/join:
+    post:
+      tags:
+        - Families
+      summary: "Join Family"
+      description: "Bergabung ke dalam suatu family dengan menggunakan family ID dan family code yang valid."
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - familyId
+                - familyCode
+              properties:
+                familyId:
+                  type: integer
+                  example: 1 #wait -- ntar cek db
+                familyCode:
+                  type: string
+                  example: "ABCD12" #wait -- ntar cek db
+
+      responses:
+        "200":
+          description: "Berhasil masuk ke dalam family"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+#                  status:
+#                    type: string
+#                    example: "success"
+#                  message:
+#                    type: string
+#                    example: "Berhasil masuk ke dalam family dengan ID: {ID}"
+                  data:
+                    type: object
+                    properties:
+                      joined:
+                        type: boolean
+                        example: true
+
+        "400": # ini kalo salah format / field ada yg kosong, jadi datanya berantakan pas req
+          $ref: "#/components/responses/BadRequest"
+        "401": #  token expired
+          $ref: "#/components/responses/Unauthorized"
+        "404": # kalo salah url, endpointnya gk ada
+          $ref: "#/components/responses/NotFound"
+        "500": # database connection error + backend bugs
+          $ref: "#/components/responses/InternalServerError"
+        "503": # maintenance
+          $ref: "#/components/responses/ServiceUnavailable"
+
+          # ------------------------------------------------------------
+          # API FAMILIES: LEAVE FAMILY
+          # ------------------------------------------------------------
+
+
+  /api/v1/families/leave:
+    post:
+      tags:
+        - Families
+      summary: "Keluar Family"
+      description: "Mengeluarkan pengguna dari family"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - familyId
+              properties:
+                familyId:
+                  type: integer
+                  example: 0 #wait -- ntar cek db
+
+      responses:
+        "200":
+          description: "Berhasil keluar dari family"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+#                  status:
+#                    type: string
+#                    example : "success"
+#                  message:
+#                    type: string
+#                    example: "Berhasil keluar dari family dengan ID: {ID}"
+                  data:
+                    type: object
+                    properties:
+                      left:
+                        type: boolean
+                        example: true
+
+        "400": # ini kalo salah format / field ada yg kosong, jadi datanya berantakan pas req
+          $ref: "#/components/responses/BadRequest"
+        "401": #  token expired
+          $ref: "#/components/responses/Unauthorized"
+        "404": # kalo salah url, endpointnya gk ada
+          $ref: "#/components/responses/NotFound"
+        "500": # database connection error + backend bugs
+          $ref: "#/components/responses/InternalServerError"
+        "503": # maintenance
+          $ref: "#/components/responses/ServiceUnavailable"
+
+# ------------------------------------------------------------
+# COMPONENTS
+# ------------------------------------------------------------
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+#    BUAT OBJECT USER YANG DIRESP
+    User:
+      type: object
+      properties:
+        id: { type: integer, example: 12 }
+        nim: { type: string, example: "13523158" }
+        email: { type: string, example: "13523158@std.stei.itb.ac.id" }
+        fullName: { type: string, example: "Lukas Raja Agripa" }
+
+# BUAT OBJECT GET USER PROFILE YANG DIRESP
+# BUAT OBJECT PATCH UPDATE PROFILE YANG DIRESP
+
+    UserWithTS:
+      allOf:
+      - $ref: '#/components/schemas/User' # ambil user
+      - type: object
+        properties:
+          createdAt: { type: string, format: date-time }
+          updatedAt: { type: string, format: date-time }
+
+# BUAT OBJECT GET ALL FAMILIES YANG DIRESP
+
+    FamilyBasic:
+      type: object
+      properties:
+        id: { type: integer, example: 41 }
+        name: { type: string, example: "Jowoborots Fam" }
+        iconUrl: { type: string, example: "https://mad.labpro.hmif.dev/assets/family_icon_1.png" }
+
+# BUAT OBJECT GET RANDOM FAMILIES YANG DIRESP -- DATA SENSOR
+# BUAT OBJECT GET FAMILY DETAIL BY ID YANG DIRESP -- DATA DEPENDS ON isMember atau ga
+# BUAT OBJECT CREATE NEW FAMILY YANG DIRESP -- DATA TIDAK SENSOR
+
+    FamilyDiscover:
+      allOf:
+        - $ref: '#/components/schemas/FamilyBasic'
+        - type: object
+          properties:
+            familyCode: { type: string, example: "ABC123" }
+            isMember: { type: boolean, example: true }
+            members:
+              type: array
+              items:
+                type: object
+                properties:
+                  fullName: { type: string, example: "L**** R*** A*****" } # contoh sensor
+                  email: { type: string, example: "********@std.stei.itb.ac.id" }
+
+# BUAT OBJECT GET ALL MY FAMILIES YANG DIRESP -- DATA TIDAK SENSOR
+
+    FamilyDetail:
+      allOf:
+        - $ref: '#/components/schemas/FamilyBasic'
+        - type: object
+          properties:
+            familyCode: { type: string, example: "ABC123", description: "Family code yang digunakan untuk bergabung ke family!" }
+            isMember: { type: boolean, example: true }
+            members:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: integer, example: 1 }
+                  fullName: { type: string, example: "Lukas Raja A.", description: "Nama lengkap pengguna yang bergabung ke family, kalo belum bergabung, SENSOR!" }
+                  email: { type: string, example: "13523158@std.stei.itb.ac.id", description: "email lengkap pengguna yang bergabung ke family, kalo belum bergabung, SENSOR!"}
+                  joinedAt: { type: string, format: date-time, example: "2026-03-15T10:00:00Z" }
+                  
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "Error"
+        message:
+          type: string
+          example: "Deskripsi error di sini (misal: Email sudah terdaftar!)"
+
+  responses:
+    BadRequest:
+      description: "Format request salah atau ada field yang kosong"
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+        description: "Token tidak valid, expired, atau password salah"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+        description: "Resource (User/Family) tidak ditemukan"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+        description: "Terjadi kesalahan pada server / database"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+        description: "Sedang ada maintenance"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
