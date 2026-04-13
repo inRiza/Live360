@@ -15,19 +15,12 @@ components:
       bearerFormat: JWT
 
   schemas:
-    BaseResponse:
-      type: object
-      properties:
-        data:
-          type: object
-
     LoginRequest:
       type: object
       required: [email, password]
       properties:
         email:
           type: string
-          format: email
         password:
           type: string
 
@@ -40,15 +33,8 @@ components:
           type: string
         email:
           type: string
-          format: email
         fullName:
           type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
 
     LoginData:
       type: object
@@ -57,7 +43,6 @@ components:
           type: string
         expiresAt:
           type: string
-          format: date-time
         user:
           $ref: '#/components/schemas/UserData'
 
@@ -68,6 +53,16 @@ components:
         fullName:
           type: string
 
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/UserData'
+        - type: object
+          properties:
+            createdAt:
+              type: string
+            updatedAt:
+              type: string
+
     FamilyBasic:
       type: object
       properties:
@@ -77,17 +72,14 @@ components:
           type: string
         iconUrl:
           type: string
-          format: uri
 
     MemberCensored:
       type: object
       properties:
         fullName:
           type: string
-          description: censored name e.g. D********* T*********
         email:
           type: string
-          description: censored email e.g. ********@std.stei.itb.ac.id
 
     MemberDetail:
       type: object
@@ -98,10 +90,8 @@ components:
           type: string
         email:
           type: string
-          format: email
         joinedAt:
           type: string
-          format: date-time
 
     FamilyDiscover:
       type: object
@@ -112,67 +102,12 @@ components:
           type: string
         iconUrl:
           type: string
-          format: uri
         createdAt:
           type: string
-          format: date-time
         members:
           type: array
           items:
             $ref: '#/components/schemas/MemberCensored'
-
-    FamilyDetailNonMember:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        iconUrl:
-          type: string
-          format: uri
-        isMember:
-          type: boolean
-          example: false
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        members:
-          type: array
-          items:
-            $ref: '#/components/schemas/MemberCensored'
-
-    FamilyDetailMember:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        iconUrl:
-          type: string
-          format: uri
-        isMember:
-          type: boolean
-          example: true
-        familyCode:
-          type: string
-          minLength: 6
-          maxLength: 6
-          example: ABC123
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        members:
-          type: array
-          items:
-            $ref: '#/components/schemas/MemberDetail'
 
     MyFamilyDetail:
       type: object
@@ -183,21 +118,40 @@ components:
           type: string
         iconUrl:
           type: string
-          format: uri
         familyCode:
           type: string
-          minLength: 6
-          maxLength: 6
         createdAt:
           type: string
-          format: date-time
         updatedAt:
           type: string
-          format: date-time
         members:
           type: array
           items:
             $ref: '#/components/schemas/MemberDetail'
+
+    FamilyDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        iconUrl:
+          type: string
+        isMember:
+          type: boolean
+        familyCode:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        members:
+          type: array
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/MemberCensored'
+              - $ref: '#/components/schemas/MemberDetail'
 
     CreateFamilyRequest:
       type: object
@@ -205,19 +159,8 @@ components:
       properties:
         name:
           type: string
-          maxLength: 40
         iconUrl:
           type: string
-          format: uri
-          enum:
-            - https://mad.labpro.hmif.dev/assets/family_icon_1.png
-            - https://mad.labpro.hmif.dev/assets/family_icon_2.png
-            - https://mad.labpro.hmif.dev/assets/family_icon_3.png
-            - https://mad.labpro.hmif.dev/assets/family_icon_4.png
-            - https://mad.labpro.hmif.dev/assets/family_icon_5.png
-            - https://mad.labpro.hmif.dev/assets/family_icon_6.png
-            - https://mad.labpro.hmif.dev/assets/family_icon_7.png
-            - https://mad.labpro.hmif.dev/assets/family_icon_8.png
 
     JoinFamilyRequest:
       type: object
@@ -227,8 +170,6 @@ components:
           type: integer
         familyCode:
           type: string
-          minLength: 6
-          maxLength: 6
 
     LeaveFamilyRequest:
       type: object
@@ -276,12 +217,6 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/LoginData'
-        '401':
-          description: invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /api/me:
     get:
@@ -298,13 +233,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/UserData'
-        '409':
-          description: token expired or unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                    $ref: '#/components/schemas/UserProfile'
 
     patch:
       summary: Update current user profile
@@ -326,38 +255,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/UserData'
-        '409':
-          description: token expired or unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /api/me/families:
-    get:
-      summary: Get all families joined by current user
-      tags: [Family]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: list of joined families with full member details
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MyFamilyDetail'
-        '409':
-          description: token expired or unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                    $ref: '#/components/schemas/UserProfile'
 
   /api/families:
     get:
@@ -377,13 +275,6 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/FamilyBasic'
-        '409':
-          description: token expired or unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
     post:
       summary: Create a new family
       tags: [Family]
@@ -397,30 +288,24 @@ paths:
               $ref: '#/components/schemas/CreateFamilyRequest'
       responses:
         '200':
-          description: family created, creator auto-joined
+          description: family created
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/FamilyDetailMember'
-        '409':
-          description: token expired or unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                    $ref: '#/components/schemas/FamilyDetailResponse'
 
-  /api/families/discover:
+  /api/me/families:
     get:
-      summary: Get 5 random families not yet joined by current user
+      summary: Get all families joined by current user
       tags: [Family]
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 5 random families with censored member info
+          description: list of joined families
           content:
             application/json:
               schema:
@@ -428,19 +313,54 @@ paths:
                 properties:
                   data:
                     type: array
-                    maxItems: 5
                     items:
-                      $ref: '#/components/schemas/FamilyDiscover'
-        '409':
-          description: token expired or unauthorized
+                      $ref: '#/components/schemas/MyFamilyDetail'
+
+  /api/families/discover:
+    get:
+      summary: Get 5 random families
+      tags: [Family]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 5 random families
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FamilyDiscover'
+
+  /api/families/{familyId}:
+    get:
+      summary: Get family detail by id
+      tags: [Family]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: familyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: family detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FamilyDetailResponse'
 
   /api/families/join:
     post:
-      summary: Join a family using family code
+      summary: Join a family
       tags: [Family]
       security:
         - bearerAuth: []
@@ -460,12 +380,6 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/JoinResponse'
-        '409':
-          description: token expired or unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /api/families/leave:
     post:
@@ -489,48 +403,3 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/LeaveResponse'
-        '409':
-          description: token expired or unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /api/families/{familyId}:
-    get:
-      summary: Get family detail by id
-      tags: [Family]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: familyId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: family detail, response varies based on membership
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    oneOf:
-                      - $ref: '#/components/schemas/FamilyDetailMember'
-                      - $ref: '#/components/schemas/FamilyDetailNonMember'
-                    discriminator:
-                      propertyName: isMember
-        '404':
-          description: family not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: token expired or unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
