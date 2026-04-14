@@ -3,7 +3,8 @@ package com.example.nimons360.data.repository
 import com.example.nimons360.data.local.preference.TokenPreference
 import com.example.nimons360.data.remote.api.ApiService
 import com.example.nimons360.data.remote.dto.request.LoginRequest
-import com.example.nimons360.data.remote.dto.response.LoginResponse
+import com.example.nimons360.data.remote.dto.response.ApiLoginPost200Response
+import com.example.nimons360.data.remote.dto.common.LoginData
 import com.example.nimons360.utils.Result
 import javax.inject.Inject
 
@@ -11,21 +12,20 @@ class AuthRepository @Inject constructor(
     private val apiService: ApiService,
     private val tokenPreference: TokenPreference
 ) {
-    suspend fun login(email: String, password: String): Result<LoginResponse> {
+    suspend fun login(email: String, password: String): Result<LoginData> {
         return try {
             val request = LoginRequest(email, password)
             val response = apiService.login(request)
 
             // Check Response
             if (response.isSuccessful) {
-                val baseResponse = response.body()
-                val loginData = baseResponse?.data
+                val loginResponse = response.body()
+                val loginData = loginResponse?.data
 
                 // Success
                 if (loginData != null) {
-                    tokenPreference.saveToken(loginData.token)
+                    loginData.token?.let { tokenPreference.saveToken(it) }
                     Result.Success(loginData)
-                    // Failed
                 } else {
                     Result.Error("Data response kosong")
                 }
@@ -38,9 +38,8 @@ class AuthRepository @Inject constructor(
                 if (!errorBodyString.isNullOrEmpty()) {
                     try {
                         val jsonObject = org.json.JSONObject(errorBodyString)
-                        val errorObject = jsonObject.getJSONObject("error")
-                        val serverMessage = errorObject.getString("message")
-                        errorMessage = serverMessage
+                        // Mengambil message dari root JSON sesuai ErrorResponse di openapi.yaml
+                        errorMessage = jsonObject.optString("message", errorMessage)
                     } catch (e: Exception) {
                         errorMessage = "Terjadi kesalahan: $errorBodyString"
                     }

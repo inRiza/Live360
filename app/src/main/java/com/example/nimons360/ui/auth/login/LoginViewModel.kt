@@ -2,7 +2,7 @@ package com.example.nimons360.ui.auth.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.nimons360.data.remote.dto.response.LoginResponse
+import com.example.nimons360.data.remote.dto.common.LoginData
 import com.example.nimons360.data.repository.AuthRepository
 import com.example.nimons360.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,8 +16,8 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
-    private val _loginState = MutableStateFlow<Result<LoginResponse>?>(null)
-    val loginState: StateFlow<Result<LoginResponse>?> = _loginState.asStateFlow()
+    private val _loginState = MutableStateFlow<Result<LoginData>?>(null)
+    val loginState: StateFlow<Result<LoginData>?> = _loginState.asStateFlow()
 
     fun login(email: String, password: String) {
         // Call AuthRepository
@@ -27,5 +27,4 @@ class LoginViewModel @Inject constructor(
             _loginState.value = result
         }
     }
-
 }
