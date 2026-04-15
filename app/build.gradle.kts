@@ -46,6 +46,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.constraintlayout)
     ksp(libs.room.compiler)
     ksp(libs.hilt.compiler)
 
