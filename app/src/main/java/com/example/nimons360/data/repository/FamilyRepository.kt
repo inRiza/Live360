@@ -19,8 +19,24 @@ class FamilyRepository @Inject constructor(
     private val pinnedFamilyDao: PinnedFamilyDao
 ) {
     suspend fun getAllFamilies(): Result<List<FamilyBasic>> = Result.Error("not implemented")
-    suspend fun getMyFamilies(): Result<List<MyFamilyDetail>> = Result.Error("not implemented")
-    suspend fun discoverFamilies(): Result<List<FamilyDiscover>> = Result.Error("not implemented")
+    suspend fun getMyFamilies(): Result<List<MyFamilyDetail>> {
+        return try {
+            val res = apiService.getMyFamilies()
+            if (res.isSuccessful) Result.Success(res.body()?.data ?: emptyList())
+            else Result.Error("Failed: ${res.code()}")
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Unknown error")
+        }
+    }
+    suspend fun discoverFamilies(): Result<List<FamilyDiscover>> {
+        return try {
+            val res = apiService.discoverFamilies()
+            if (res.isSuccessful) Result.Success(res.body()?.data ?: emptyList())
+            else Result.Error("Failed: ${res.code()}")
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Unknown error")
+        }
+    }
     suspend fun getFamilyDetail(familyId: Int): Result<FamilyDetailResponse> = Result.Error("not implemented")
     suspend fun createFamily(name: String, iconUrl: String): Result<FamilyDetailResponse> = Result.Error("not implemented")
     suspend fun joinFamily(familyId: Int, familyCode: String): Result<JoinResponse> = Result.Error("not implemented")
