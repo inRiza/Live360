@@ -15,7 +15,7 @@
     />
     <!-- TODO: wait families fragment -->
     <item 
-        android:id="@+id/familyFragment" 
+        android:id="@+id/familiesFragment" 
         android:icon="@drawable/ic_family"
         android:title="Families"
     />
