@@ -1,30 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="32dp"
-    android:background="@android:color/white">
-    <ImageView
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:src="@drawable/baseline_signal_wifi_off_24"
-        android:layout_marginBottom="16dp"/>
-    <TextView
+    app:cardCornerRadius="16dp"
+    app:cardElevation="8dp"
+    android:layout_margin="16dp">
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No Internet Connection"
-        android:textStyle="bold"
-        android:textSize="16sp"
-        android:textColor="@color/text"
-        android:layout_marginBottom="8dp"/>
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Please check your connection and try again"
-        android:textSize="13sp"
-        android:textColor="@color/text"
-        android:gravity="center"/>
-</LinearLayout>
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:background="@android:color/white">
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/baseline_signal_wifi_off_24"
+            android:layout_marginBottom="16dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No Internet Connection"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="@color/text"
+            android:layout_marginBottom="8dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Please check your connection and try again"
+            android:textSize="13sp"
+            android:textColor="@color/text"
+            android:gravity="center"/>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
