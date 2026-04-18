@@ -16,6 +16,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,8 +24,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -40,6 +43,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +62,8 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.annotations.IconFactory
 import org.maplibre.android.annotations.MarkerOptions
 import org.maplibre.android.geometry.LatLng
@@ -73,6 +79,8 @@ fun MapScreen(viewModel: MapViewModel) {
 	val lifecycleOwner = LocalLifecycleOwner.current
 	val uiState by viewModel.uiState.collectAsState()
 	val snackbarHostState = remember { SnackbarHostState() }
+	var recenterRequestId by remember { mutableStateOf(0) }
+	var resetNorthRequestId by remember { mutableStateOf(0) }
 
 	val permissionLauncher = rememberLauncherForActivityResult(
 		contract = ActivityResultContracts.RequestPermission()
@@ -124,6 +132,8 @@ fun MapScreen(viewModel: MapViewModel) {
 			onMemberClick = { viewModel.onMemberMarkerClicked(it) },
 			onFavoriteLongPress = { lat, lng -> viewModel.addFavoriteLocation(lat, lng) },
 			onFavoriteFocused = viewModel::consumeFocusedFavorite,
+			recenterRequestId = recenterRequestId,
+			resetNorthRequestId = resetNorthRequestId,
 			modifier = Modifier.fillMaxSize()
 		)
 
@@ -153,6 +163,14 @@ fun MapScreen(viewModel: MapViewModel) {
 					.padding(top = 148.dp)
 			)
 		}
+
+		MapFloatingControls(
+			modifier = Modifier
+				.align(Alignment.BottomEnd)
+				.padding(end = 14.dp, bottom = if (uiState.currentUser != null) 172.dp else 28.dp),
+			onResetNorth = { resetNorthRequestId += 1 },
+			onRecenter = { recenterRequestId += 1 }
+		)
 
 		SnackbarHost(
 			hostState = snackbarHostState,
@@ -234,6 +252,8 @@ private fun MapLibreContent(
 	onMemberClick: (String) -> Unit,
 	onFavoriteLongPress: (Double, Double) -> Unit,
 	onFavoriteFocused: () -> Unit,
+	recenterRequestId: Int,
+	resetNorthRequestId: Int,
 	modifier: Modifier = Modifier
 ) {
 	val context = LocalContext.current
@@ -269,6 +289,8 @@ private fun MapLibreContent(
 	val markerFavoriteLookup = remember { mutableStateMapOf<Long, String>() }
 	val memberMarkers = remember { linkedMapOf<String, org.maplibre.android.annotations.Marker>() }
 	val favoriteMarkers = remember { linkedMapOf<String, org.maplibre.android.annotations.Marker>() }
+	var handledRecenterRequestId by remember { mutableStateOf(0) }
+	var handledResetNorthRequestId by remember { mutableStateOf(0) }
 
 	DisposableEffect(mapView, lifecycleOwner) {
 		val observer = LifecycleEventObserver { _, event ->
@@ -295,7 +317,7 @@ private fun MapLibreContent(
 				map.setStyle(Style.Builder().fromJson(buildOsmRasterStyleJson())) {
 					styleReady = true
 				}
-				map.uiSettings.isCompassEnabled = true
+				map.uiSettings.isCompassEnabled = false
 				map.uiSettings.isRotateGesturesEnabled = true
 				map.uiSettings.isTiltGesturesEnabled = true
 				map.addOnMapLongClickListener { latLng ->
@@ -336,7 +358,7 @@ private fun MapLibreContent(
 					member = currentUser,
 					memberMarkers = memberMarkers,
 					markerMemberLookup = markerMemberLookup,
-					pinColor = Color.parseColor("#1565C0"),
+					pinColor = Color.parseColor("#0B3D91"),
 					drawArrow = true
 				)
 
@@ -377,7 +399,7 @@ private fun MapLibreContent(
 			state.focusedFavoriteLocationId?.let { favId ->
 				state.favoriteLocations.find { it.id == favId }?.let { fav ->
 					map.animateCamera(
-						org.maplibre.android.camera.CameraUpdateFactory.newLatLngZoom(
+						CameraUpdateFactory.newLatLngZoom(
 							LatLng(fav.latitude, fav.longitude),
 							16.5
 						)
@@ -385,8 +407,66 @@ private fun MapLibreContent(
 					onFavoriteFocused()
 				}
 			}
+
+			if (recenterRequestId != handledRecenterRequestId) {
+				handledRecenterRequestId = recenterRequestId
+				state.currentUser?.let { currentUser ->
+					map.animateCamera(
+						CameraUpdateFactory.newLatLngZoom(
+							LatLng(currentUser.latitude, currentUser.longitude),
+							17.5
+						)
+					)
+				}
+			}
+
+			if (resetNorthRequestId != handledResetNorthRequestId) {
+				handledResetNorthRequestId = resetNorthRequestId
+				val northUp = CameraPosition.Builder(map.cameraPosition)
+					.bearing(0.0)
+					.build()
+				map.animateCamera(CameraUpdateFactory.newCameraPosition(northUp))
+			}
 		}
 	)
+}
+
+@Composable
+private fun MapFloatingControls(
+	modifier: Modifier = Modifier,
+	onResetNorth: () -> Unit,
+	onRecenter: () -> Unit
+) {
+	Column(
+		modifier = modifier,
+		verticalArrangement = Arrangement.spacedBy(10.dp)
+	) {
+		Surface(
+			modifier = Modifier
+				.size(46.dp)
+				.clickable { onResetNorth() },
+			shape = CircleShape,
+			color = ComposeColor.White.copy(alpha = 0.95f),
+			shadowElevation = 6.dp
+		) {
+			Box(contentAlignment = Alignment.Center) {
+				Text(text = "🧭")
+			}
+		}
+
+		Surface(
+			modifier = Modifier
+				.size(52.dp)
+				.clickable { onRecenter() },
+			shape = CircleShape,
+			color = ComposeColor(0xFF0B3D91),
+			shadowElevation = 8.dp
+		) {
+			Box(contentAlignment = Alignment.Center) {
+				Text(text = "🔵")
+			}
+		}
+	}
 }
 
 private fun syncMemberMarker(
@@ -442,6 +522,7 @@ private fun syncFavoriteMarkers(
 					.position(latLng)
 					.icon(icon)
 					.title(fav.label)
+					.snippet(fav.address)
 			)
 			favoriteMarkers[fav.id] = marker
 			markerFavoriteLookup[marker.id] = fav.id
@@ -460,61 +541,52 @@ private fun syncFavoriteMarkers(
 }
 
 private fun createMemberBitmap(context: Context, name: String, color: Int, rotation: Float, drawArrow: Boolean): Bitmap {
-	val size = (48 * context.resources.displayMetrics.density).roundToInt()
+	val baseDp = if (drawArrow) 52 else 42
+	val size = (baseDp * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(baseDp)
 	val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
 	val canvas = Canvas(bitmap)
 	val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-	paint.color = color
-	canvas.drawCircle(size / 2f, size / 2f, size / 3f, paint)
-
 	paint.color = Color.WHITE
-	canvas.drawCircle(size / 2f, size / 2f, size / 4f, paint)
+	canvas.drawCircle(size / 2f, size / 2f, size * 0.31f, paint)
+
+	paint.color = color
+	canvas.drawCircle(size / 2f, size / 2f, size * 0.27f, paint)
 
 	if (drawArrow) {
 		canvas.save()
 		canvas.rotate(rotation, size / 2f, size / 2f)
-		paint.color = color
+		paint.color = Color.parseColor("#002A6E")
 		val path = android.graphics.Path().apply {
-			moveTo(size / 2f, size / 8f)
-			lineTo(size / 2f - size / 10f, size / 3.5f)
-			lineTo(size / 2f + size / 10f, size / 3.5f)
+			moveTo(size / 2f, size * 0.02f)
+			lineTo(size / 2f - size * 0.15f, size * 0.30f)
+			lineTo(size / 2f + size * 0.15f, size * 0.30f)
 			close()
 		}
 		canvas.drawPath(path, paint)
 		canvas.restore()
 	}
 
-	paint.color = Color.BLACK
-	paint.textSize = size / 5f
+	paint.color = Color.WHITE
+	paint.textSize = size * 0.20f
 	paint.textAlign = Paint.Align.CENTER
-	val displayName = if (name.length > 8) name.substring(0, 6) + ".." else name
-	canvas.drawText(displayName, size / 2f, size * 0.9f, paint)
+	val displayName = name.trim().split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }.ifBlank { "?" }
+	canvas.drawText(displayName, size / 2f, size * 0.57f, paint)
 
 	return bitmap
 }
 
 private fun createFavoriteBitmap(context: Context): Bitmap {
-	val size = (32 * context.resources.displayMetrics.density).roundToInt()
+	val size = (34 * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(34)
 	val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
 	val canvas = Canvas(bitmap)
 	val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-	paint.color = Color.parseColor("#FBC02D")
-	val path = android.graphics.Path().apply {
-		moveTo(size / 2f, size * 0.1f)
-		lineTo(size * 0.65f, size * 0.4f)
-		lineTo(size * 0.95f, size * 0.4f)
-		lineTo(size * 0.7f, size * 0.6f)
-		lineTo(size * 0.8f, size * 0.9f)
-		lineTo(size / 2f, size * 0.75f)
-		lineTo(size * 0.2f, size * 0.9f)
-		lineTo(size * 0.3f, size * 0.6f)
-		lineTo(size * 0.05f, size * 0.4f)
-		lineTo(size * 0.35f, size * 0.4f)
-		close()
-	}
-	canvas.drawPath(path, paint)
+	paint.color = Color.parseColor("#B00020")
+	paint.textAlign = Paint.Align.CENTER
+	paint.textSize = size * 0.88f
+	paint.isFakeBoldText = true
+	canvas.drawText("♥", size / 2f, size * 0.82f, paint)
 
 	return bitmap
 }
@@ -534,7 +606,7 @@ private fun FavoriteLocationsPanel(
 	) {
 		Column(modifier = Modifier.padding(16.dp)) {
 			Text(
-				text = "Favorite Locations",
+				text = "Lokasi Favorit",
 				style = MaterialTheme.typography.titleMedium,
 				fontWeight = FontWeight.Bold,
 				modifier = Modifier.padding(bottom = 8.dp)
@@ -542,7 +614,7 @@ private fun FavoriteLocationsPanel(
 
 			if (favorites.isEmpty()) {
 				Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-					Text("Long press on map to add favorites", style = MaterialTheme.typography.bodySmall)
+					Text("Hold/Tekan lama di peta untuk menambahkan favorit", style = MaterialTheme.typography.bodySmall)
 				}
 			} else {
 				LazyColumn {
@@ -556,14 +628,26 @@ private fun FavoriteLocationsPanel(
 						) {
 							Column(modifier = Modifier.weight(1f)) {
 								Text(text = fav.label, style = MaterialTheme.typography.bodyLarge)
+								if (fav.address.isNotBlank() && !fav.address.equals("Address unavailable", ignoreCase = true)) {
+									Text(
+										text = fav.address,
+										style = MaterialTheme.typography.bodySmall,
+										color = MaterialTheme.colorScheme.onSurfaceVariant
+									)
+								}
 								Text(
-									text = String.format(Locale.US, "%.5f, %.5f", fav.latitude, fav.longitude),
+									text = "Koordinat: " + String.format(Locale.US, "%.5f", fav.latitude),
+									style = MaterialTheme.typography.bodySmall,
+									color = MaterialTheme.colorScheme.onSurfaceVariant
+								)
+								Text(
+									text = String.format(Locale.US, "%.5f", fav.longitude),
 									style = MaterialTheme.typography.bodySmall,
 									color = MaterialTheme.colorScheme.onSurfaceVariant
 								)
 							}
 							Text(
-								text = "Remove",
+								text = "Hapus",
 								style = MaterialTheme.typography.labelMedium,
 								color = MaterialTheme.colorScheme.error,
 								modifier = Modifier

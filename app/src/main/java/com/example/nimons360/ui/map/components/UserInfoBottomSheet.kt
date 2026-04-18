@@ -84,22 +84,18 @@ fun UserInfoBottomSheet(
 			) {
 				MetricCard(
 					modifier = Modifier.weight(1f),
-					title = "Baterai",
-					value = "${member.batteryLevel}%"
+					title = "👁️‍🗨️Baterai",
+					value = "${batteryIcon(member.batteryLevel)} ${member.batteryLevel}%"
 				)
 				MetricCard(
 					modifier = Modifier.weight(1f),
-					title = "Lokasi",
+					title = "📍Lokasi",
 					value = String.format(Locale.US, "%.4f, %.4f", member.latitude, member.longitude)
 				)
 				MetricCard(
 					modifier = Modifier.weight(1f),
-					title = "Internet",
-					value = when (member.internetStatus.lowercase()) {
-						"wifi" -> "wifi"
-						"mobile" -> "mobile"
-						else -> member.internetStatus
-					}
+					title = "🌐 Internet",
+					value = internetStatusLabel(member.internetStatus)
 				)
 			}
 
@@ -117,6 +113,16 @@ fun UserInfoBottomSheet(
 		}
 	}
 }
+
+private fun internetStatusLabel(status: String): String {
+	return when (status.lowercase()) {
+		"wifi" -> "🛜 WIFI"
+		"mobile" -> "📳 Mobile"
+		else -> status
+	}
+}
+
+private fun batteryIcon(level: Int): String = if (level <= 20) "🪫" else "🔋"
 
 @Composable
 private fun MetricCard(
