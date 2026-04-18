@@ -142,11 +142,11 @@ class MapViewModel @Inject constructor(
 
 			if (deltaMs < 1500L && distance > 45.0) return
 
+			// smoothening
 			val alpha = when {
-				distance < 3.0 -> 0.15
-				distance < 10.0 -> 0.28
-				distance < 25.0 -> 0.45
-				else -> 0.72
+				distance < 2.0 -> 0.45  
+				distance < 8.0 -> 0.75  
+				else -> 1.0          
 			}
 			currentLatitude = prevLat + (latitude - prevLat) * alpha
 			currentLongitude = prevLng + (longitude - prevLng) * alpha
