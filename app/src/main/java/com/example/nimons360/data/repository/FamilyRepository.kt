@@ -16,7 +16,6 @@ import com.example.nimons360.data.remote.dto.response.LeaveResponse
 import com.example.nimons360.utils.Result
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 
 class FamilyRepository @Inject constructor(
     private val apiService: ApiService,
@@ -48,7 +47,17 @@ class FamilyRepository @Inject constructor(
         }
     }
 
-    suspend fun getFamilyDetail(familyId: Int): Result<FamilyDetailWrappedResponse> {
+    suspend fun discoverFamilies(): Result<List<FamilyDiscover>> {
+        return try {
+            val res = apiService.discoverFamilies()
+            if (res.isSuccessful) Result.Success(res.body()?.data ?: emptyList())
+            else Result.Error("Failed: ${res.code()}")
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Unknown error")
+        }
+    }
+
+    suspend fun getFamilyDetail(familyId: Int): Result<FamilyDetailResponse> {
         return try {
             val response = apiService.getFamilyDetail(familyId)
             if (response.isSuccessful) {
@@ -59,7 +68,7 @@ class FamilyRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Result.Error(e.localizedMessage ?: "Terjadi kesalahan jaringan")
-        } as Result<FamilyDetailWrappedResponse>
+        }
     }
 
     suspend fun createFamily(name: String, iconUrl: String): Result<FamilyDetailResponse> {
@@ -112,7 +121,8 @@ class FamilyRepository @Inject constructor(
         }
     }
 
-    // Mengambil data real-time dari Room Database
+    // Local Database
+
     fun getPinnedFamilies(): Flow<List<PinnedFamilyEntity>> {
         return pinnedFamilyDao.getAll()
     }
@@ -126,23 +136,7 @@ class FamilyRepository @Inject constructor(
         pinnedFamilyDao.deleteById(familyId)
     }
 
-    suspend fun getMyFamilies(): Result<List<MyFamilyDetail>> {
-        return try {
-            val res = apiService.getMyFamilies()
-            if (res.isSuccessful) Result.Success(res.body()?.data ?: emptyList())
-            else Result.Error("Failed: ${res.code()}")
-        } catch (e: Exception) {
-            Result.Error(e.message ?: "Unknown error")
-        }
+    suspend fun isPinned(familyId: Int): Boolean {
+        return pinnedFamilyDao.isPinned(familyId)
     }
-    suspend fun discoverFamilies(): Result<List<FamilyDiscover>> {
-        return try {
-            val res = apiService.discoverFamilies()
-            if (res.isSuccessful) Result.Success(res.body()?.data ?: emptyList())
-            else Result.Error("Failed: ${res.code()}")
-        } catch (e: Exception) {
-            Result.Error(e.message ?: "Unknown error")
-        }
-    }
-    suspend fun isPinned(familyId: Int): Boolean = false
 }

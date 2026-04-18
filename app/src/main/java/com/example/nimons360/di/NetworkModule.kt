@@ -1,15 +1,13 @@
 package com.example.nimons360.di
 
-import android.content.Context
-import android.util.Log
 import com.example.nimons360.BuildConfig
+import android.util.Log
 import com.example.nimons360.data.local.preference.TokenPreference
 import com.example.nimons360.data.remote.api.ApiService
 import com.example.nimons360.utils.TokenExpiredInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor

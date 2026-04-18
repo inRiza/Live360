@@ -1,15 +1,11 @@
 package com.example.nimons360.utils
 
-import android.content.Context
-import android.content.Intent
 import com.example.nimons360.data.local.preference.TokenPreference
-import com.example.nimons360.ui.auth.login.LoginActivity
 import okhttp3.Interceptor
 import okhttp3.Response
 
 class TokenExpiredInterceptor(
-    private val tokenPreference: TokenPreference,
-    private val context: Context
+    private val tokenPreference: TokenPreference
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
