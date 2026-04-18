@@ -1,47 +1,104 @@
 package com.example.nimons360.ui.family.list
 
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.nimons360.data.remote.dto.common.FamilyBasic
+import com.example.nimons360.data.remote.dto.common.MyFamilyDetail
+import com.example.nimons360.data.repository.FamilyRepository
+import com.example.nimons360.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Model data sederhana untuk daftar keluarga
 data class FamilyModel(
     val id: String,
     val name: String,
     val isPinned: Boolean,
-    val bgColor: Color
+    val iconUrl: String
 )
 
 @HiltViewModel
-class FamilyViewModel @Inject constructor() : ViewModel() {
+class FamilyViewModel @Inject constructor(
+    private val repository: FamilyRepository
+) : ViewModel() {
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
     private val _selectedFilter = MutableStateFlow("All")
     val selectedFilter = _selectedFilter.asStateFlow()
 
-    // Data dummy
-    private val _families = MutableStateFlow(
-        listOf(
-            FamilyModel("1", "Maulana Family", true, Color(0xFFFFEBEE)),
-            FamilyModel("2", "Study Group", true, Color(0xFFE3F2FD)),
-            FamilyModel("3", "Camping Trip", false, Color(0xFFE8F5E9)),
-            FamilyModel("4", "Neighborhood Watch", false, Color(0xFFFFF8E1)),
-            FamilyModel("5", "ITB 2022 Batch", false, Color(0xFFEDE7F6))
-        )
-    )
-    val families = _families.asStateFlow()
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
+    private val _allFamiliesApi = MutableStateFlow<List<FamilyBasic>>(emptyList())
+    private val _myFamiliesApi = MutableStateFlow<List<MyFamilyDetail>>(emptyList())
+
+    init {
+        fetchFamiliesData()
+    }
+
+    fun fetchFamiliesData() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val allRes = repository.getAllFamilies()
+            val myRes = repository.getMyFamilies()
+            if (allRes is Result.Success) _allFamiliesApi.value = allRes.data
+            if (myRes is Result.Success) _myFamiliesApi.value = myRes.data
+            _isLoading.value = false
+        }
+    }
+
+    val families = combine(
+        _allFamiliesApi,
+        _myFamiliesApi,
+        _selectedFilter,
+        _searchQuery,
+        repository.getPinnedFamilies()
+    ) { all, my, filter, query, pinnedList ->
+
+        val pinnedIds = pinnedList.map { it.id }.toSet()
+
+        val baseList = if (filter == "All") {
+            all.map {
+                FamilyModel(
+                    id = it.id.toString(),
+                    name = it.name ?: "",
+                    isPinned = pinnedIds.contains(it.id),
+                    iconUrl = it.iconUrl ?: ""
+                )
+            }
+        } else {
+            my.map {
+                FamilyModel(
+                    id = it.id.toString(),
+                    name = it.name ?: "",
+                    isPinned = pinnedIds.contains(it.id),
+                    iconUrl = it.iconUrl ?: ""
+                )
+            }
+        }
+
+        // Filtering
+        if (query.isBlank()) {
+            baseList
+        } else {
+            baseList.filter { it.name.contains(query, ignoreCase = true) }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun updateSearchQuery(query: String) { _searchQuery.value = query }
-
     fun updateFilter(filter: String) { _selectedFilter.value = filter }
 
-    fun togglePin(familyId: String) {
-        _families.value = _families.value.map {
-            if (it.id == familyId) it.copy(isPinned = !it.isPinned) else it
+    fun togglePin(familyId: String, name: String, iconUrl: String, isCurrentlyPinned: Boolean) {
+        viewModelScope.launch {
+            val id = familyId.toIntOrNull() ?: return@launch
+            if (isCurrentlyPinned) {
+                repository.unpinFamily(id)
+            } else {
+                repository.pinFamily(id, name, iconUrl)
+            }
         }
     }
 }
