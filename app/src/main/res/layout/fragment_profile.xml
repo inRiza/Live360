@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
-    android:fillViewport="true">
+    android:background="@color/background">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -21,10 +21,8 @@
             <FrameLayout
                 android:layout_width="88dp"
                 android:layout_height="88dp">
-
-                <!-- avatar circle -->
                 <TextView
-                    android:id="@+id/tvAvatarMain"
+                    android:id="@+id/tv_avatar"
                     android:layout_width="80dp"
                     android:layout_height="80dp"
                     android:layout_gravity="top|center_horizontal"
@@ -34,10 +32,8 @@
                     android:textColor="@color/white"
                     android:textSize="28sp"
                     android:textStyle="bold" />
-
-                <!-- edit icon  -->
                 <ImageButton
-                    android:id="@+id/ivEditProfile"
+                    android:id="@+id/btn_edit"
                     android:layout_width="26dp"
                     android:layout_height="26dp"
                     android:layout_gravity="bottom|end"
@@ -52,7 +48,7 @@
             </FrameLayout>
 
             <TextView
-                android:id="@+id/tvProfileName"
+                android:id="@+id/tv_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -62,7 +58,7 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/tvProfileEmail"
+                android:id="@+id/tv_email"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
@@ -86,7 +82,7 @@
             android:paddingBottom="10dp">
 
             <TextView
-                android:id="@+id/btnSignOut"
+                android:id="@+id/btn_sign_out"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:background="@drawable/profile_bg_sign_out"
@@ -98,4 +94,4 @@
         </LinearLayout>
 
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
