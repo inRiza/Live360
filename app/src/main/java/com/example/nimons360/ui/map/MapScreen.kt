@@ -1,6 +1,5 @@
 package com.example.nimons360.ui.map
 
-import android.animation.ValueAnimator
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -12,9 +11,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.location.Location
 import android.os.Looper
-import android.view.animation.LinearInterpolator
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,7 +19,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -346,7 +342,7 @@ private fun MapLibreContent(
 
 				if (!didMoveToCurrentUser) {
 					map.animateCamera(
-						com.mapbox.mapboxsdk.camera.CameraUpdateFactory.newLatLngZoom(
+						org.maplibre.android.camera.CameraUpdateFactory.newLatLngZoom(
 							LatLng(currentUser.latitude, currentUser.longitude),
 							15.5
 						)
@@ -356,86 +352,41 @@ private fun MapLibreContent(
 			}
 
 			val filteredRemoteMembers = state.remoteMembers.filter { member ->
-				state.searchQuery.isBlank() ||
-					member.fullName.contains(state.searchQuery, ignoreCase = true) ||
-					member.email.contains(state.searchQuery, ignoreCase = true)
+				state.searchQuery.isEmpty() || member.fullName.contains(state.searchQuery, ignoreCase = true)
 			}
-			val nearbyIds = state.nearbyMembers.map { it.id }.toSet()
-			val remoteFilteredIds = filteredRemoteMembers.map { it.id }.toSet()
 
 			filteredRemoteMembers.forEach { member ->
-				val color = if (member.id in nearbyIds) {
-					Color.parseColor("#EF6C00")
-				} else if (member.batteryLevel < 20) {
-					Color.parseColor("#C62828")
-				} else {
-					Color.parseColor("#2E7D32")
-				}
 				syncMemberMarker(
 					context = context,
 					map = map,
 					member = member,
 					memberMarkers = memberMarkers,
 					markerMemberLookup = markerMemberLookup,
-					pinColor = color,
+					pinColor = Color.parseColor("#E53935"),
 					drawArrow = false
 				)
 			}
 
-			val keepIds = remoteFilteredIds + setOfNotNull(state.currentUser?.id)
-			val removedIds = memberMarkers.keys.filterNot { it in keepIds }
-			removedIds.forEach { id ->
-				memberMarkers[id]?.let { marker -> map.removeMarker(marker) }
+			val allMemberIds = filteredRemoteMembers.map { it.id }.toSet() + (state.currentUser?.id ?: "")
+			val removedMemberIds = memberMarkers.keys.filter { it !in allMemberIds }
+			removedMemberIds.forEach { id ->
+				memberMarkers[id]?.let { map.removeMarker(it) }
 				memberMarkers.remove(id)
 			}
 
-			val focusedId = state.focusedFavoriteLocationId
-			if (focusedId != null) {
-				val focused = state.favoriteLocations.firstOrNull { it.id == focusedId }
-				if (focused != null) {
+			state.focusedFavoriteLocationId?.let { favId ->
+				state.favoriteLocations.find { it.id == favId }?.let { fav ->
 					map.animateCamera(
 						org.maplibre.android.camera.CameraUpdateFactory.newLatLngZoom(
-							LatLng(focused.latitude, focused.longitude),
-							16.0
+							LatLng(fav.latitude, fav.longitude),
+							16.5
 						)
 					)
+					onFavoriteFocused()
 				}
-				onFavoriteFocused()
 			}
 		}
 	)
-}
-
-private fun syncFavoriteMarkers(
-	context: Context,
-	map: MapLibreMap,
-	favorites: List<FavoriteLocationDto>,
-	favoriteMarkers: MutableMap<String, org.maplibre.android.annotations.Marker>,
-	markerFavoriteLookup: MutableMap<Long, String>
-) {
-	val iconFactory = IconFactory.getInstance(context)
-	favorites.forEach { favorite ->
-		val marker = favoriteMarkers[favorite.id]
-		if (marker == null) {
-			val newMarker = map.addMarker(
-				MarkerOptions()
-					.position(LatLng(favorite.latitude, favorite.longitude))
-					.title(favorite.label)
-					.snippet(favorite.address)
-					.icon(iconFactory.fromBitmap(buildFavoritePinBitmap()))
-			)
-			favoriteMarkers[favorite.id] = newMarker
-			markerFavoriteLookup[newMarker.id] = favorite.id
-		} else {
-			markerFavoriteLookup[marker.id] = favorite.id
-		}
-	}
-
-	val removedIds = favoriteMarkers.keys.filterNot { id -> favorites.any { it.id == id } }
-	removedIds.forEach { id ->
-		favoriteMarkers[id]?.let { marker -> map.removeMarker(marker) }
-		favoriteMarkers.remove(id)
-	}
 }
 
 private fun syncMemberMarker(
@@ -447,155 +398,125 @@ private fun syncMemberMarker(
 	pinColor: Int,
 	drawArrow: Boolean
 ) {
-	val existing = memberMarkers[member.id]
-	if (existing == null) {
+	val latLng = LatLng(member.latitude, member.longitude)
+	val existingMarker = memberMarkers[member.id]
+
+	if (existingMarker == null) {
+		val icon = IconFactory.getInstance(context).fromBitmap(
+			createMemberBitmap(context, member.fullName, pinColor, member.rotation, drawArrow)
+		)
 		val marker = map.addMarker(
 			MarkerOptions()
-				.position(LatLng(member.latitude, member.longitude))
+				.position(latLng)
+				.icon(icon)
 				.title(member.fullName)
-				.snippet(member.email)
-				.icon(
-					IconFactory.getInstance(context).fromBitmap(
-						buildUserPinBitmap(
-							context = context,
-							initials = initials(member.fullName),
-							backgroundColor = pinColor,
-							rotation = member.rotation,
-							drawArrow = drawArrow
-						)
-					)
-				)
 		)
 		memberMarkers[member.id] = marker
 		markerMemberLookup[marker.id] = member.id
-		return
-	}
-
-	animateMarkerTo(existing, LatLng(member.latitude, member.longitude))
-	markerMemberLookup[existing.id] = member.id
-}
-
-private fun animateMarkerTo(
-	marker: org.maplibre.android.annotations.Marker,
-	target: LatLng
-) {
-	val start = marker.position
-	if (start.latitude == target.latitude && start.longitude == target.longitude) return
-
-	ValueAnimator.ofFloat(0f, 1f).apply {
-		duration = 850L
-		interpolator = LinearInterpolator()
-		addUpdateListener { animator ->
-			val fraction = animator.animatedFraction
-			val lat = start.latitude + (target.latitude - start.latitude) * fraction
-			val lng = start.longitude + (target.longitude - start.longitude) * fraction
-			marker.position = LatLng(lat, lng)
-		}
-		start()
+	} else {
+		existingMarker.position = latLng
+		val icon = IconFactory.getInstance(context).fromBitmap(
+			createMemberBitmap(context, member.fullName, pinColor, member.rotation, drawArrow)
+		)
+		existingMarker.icon = icon
+		markerMemberLookup[existingMarker.id] = member.id
 	}
 }
 
-private fun drawFavoriteMarkers(
+private fun syncFavoriteMarkers(
 	context: Context,
 	map: MapLibreMap,
 	favorites: List<FavoriteLocationDto>,
+	favoriteMarkers: MutableMap<String, org.maplibre.android.annotations.Marker>,
 	markerFavoriteLookup: MutableMap<Long, String>
 ) {
-	val iconFactory = IconFactory.getInstance(context)
-	favorites.forEach { favorite ->
-		val marker = map.addMarker(
-			MarkerOptions()
-				.position(LatLng(favorite.latitude, favorite.longitude))
-				.title(favorite.label)
-				.icon(iconFactory.fromBitmap(buildFavoritePinBitmap()))
-		)
-		markerFavoriteLookup[marker.id] = favorite.id
+	favorites.forEach { fav ->
+		val latLng = LatLng(fav.latitude, fav.longitude)
+		val existing = favoriteMarkers[fav.id]
+		if (existing == null) {
+			val icon = IconFactory.getInstance(context).fromBitmap(
+				createFavoriteBitmap(context)
+			)
+			val marker = map.addMarker(
+				MarkerOptions()
+					.position(latLng)
+					.icon(icon)
+					.title(fav.label)
+			)
+			favoriteMarkers[fav.id] = marker
+			markerFavoriteLookup[marker.id] = fav.id
+		} else {
+			existing.position = latLng
+			markerFavoriteLookup[existing.id] = fav.id
+		}
+	}
+
+	val currentIds = favorites.map { it.id }.toSet()
+	val toRemove = favoriteMarkers.keys.filter { it !in currentIds }
+	toRemove.forEach { id ->
+		favoriteMarkers[id]?.let { map.removeMarker(it) }
+		favoriteMarkers.remove(id)
 	}
 }
 
-private fun buildFavoritePinBitmap(): Bitmap {
-	val size = 56
+private fun createMemberBitmap(context: Context, name: String, color: Int, rotation: Float, drawArrow: Boolean): Bitmap {
+	val size = (48 * context.resources.displayMetrics.density).roundToInt()
 	val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
 	val canvas = Canvas(bitmap)
+	val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-	val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-		color = Color.parseColor("#F9A825")
-		style = Paint.Style.FILL
-	}
-	canvas.drawCircle(size / 2f, size / 2f, size / 2.3f, circlePaint)
+	paint.color = color
+	canvas.drawCircle(size / 2f, size / 2f, size / 3f, paint)
 
-	val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-		color = Color.WHITE
-		textAlign = Paint.Align.CENTER
-		textSize = size * 0.46f
-		isFakeBoldText = true
-	}
-	canvas.drawText("★", size / 2f, size * 0.67f, starPaint)
-
-	return bitmap
-}
-
-private fun buildUserPinBitmap(
-	context: Context,
-	initials: String,
-	backgroundColor: Int,
-	rotation: Float,
-	drawArrow: Boolean
-): Bitmap {
-	val density = context.resources.displayMetrics.density
-	val size = (56 * density).roundToInt().coerceAtLeast(56)
-	val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-	val canvas = Canvas(bitmap)
-
-	val circleRadius = size * 0.28f
-	val centerX = size / 2f
-	val centerY = size / 2f
+	paint.color = Color.WHITE
+	canvas.drawCircle(size / 2f, size / 2f, size / 4f, paint)
 
 	if (drawArrow) {
-		val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-			color = Color.parseColor("#0D47A1")
-			style = Paint.Style.FILL
-		}
 		canvas.save()
-		canvas.rotate(rotation, centerX, centerY)
-		val arrowPath = android.graphics.Path().apply {
-			moveTo(centerX, centerY - circleRadius - size * 0.2f)
-			lineTo(centerX - size * 0.08f, centerY - circleRadius + size * 0.02f)
-			lineTo(centerX + size * 0.08f, centerY - circleRadius + size * 0.02f)
+		canvas.rotate(rotation, size / 2f, size / 2f)
+		paint.color = color
+		val path = android.graphics.Path().apply {
+			moveTo(size / 2f, size / 8f)
+			lineTo(size / 2f - size / 10f, size / 3.5f)
+			lineTo(size / 2f + size / 10f, size / 3.5f)
 			close()
 		}
-		canvas.drawPath(arrowPath, arrowPaint)
+		canvas.drawPath(path, paint)
 		canvas.restore()
 	}
 
-	val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-		color = Color.argb(75, 0, 0, 0)
-		style = Paint.Style.FILL
-	}
-	canvas.drawCircle(centerX, centerY + size * 0.04f, circleRadius + 4f, shadowPaint)
+	paint.color = Color.BLACK
+	paint.textSize = size / 5f
+	paint.textAlign = Paint.Align.CENTER
+	val displayName = if (name.length > 8) name.substring(0, 6) + ".." else name
+	canvas.drawText(displayName, size / 2f, size * 0.9f, paint)
 
-	val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-		color = backgroundColor
-		style = Paint.Style.FILL
-	}
-	canvas.drawCircle(centerX, centerY, circleRadius, circlePaint)
-
-	val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-		color = Color.WHITE
-		textAlign = Paint.Align.CENTER
-		textSize = size * 0.22f
-		isFakeBoldText = true
-	}
-	canvas.drawText(initials, centerX, centerY + size * 0.08f, textPaint)
 	return bitmap
 }
 
-private fun initials(name: String): String {
-	if (name.isBlank()) return "?"
-	return name.trim().split(" ")
-		.filter { it.isNotBlank() }
-		.take(2)
-		.joinToString(separator = "") { token -> token.first().uppercase() }
+private fun createFavoriteBitmap(context: Context): Bitmap {
+	val size = (32 * context.resources.displayMetrics.density).roundToInt()
+	val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+	val canvas = Canvas(bitmap)
+	val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+	paint.color = Color.parseColor("#FBC02D")
+	val path = android.graphics.Path().apply {
+		moveTo(size / 2f, size * 0.1f)
+		lineTo(size * 0.65f, size * 0.4f)
+		lineTo(size * 0.95f, size * 0.4f)
+		lineTo(size * 0.7f, size * 0.6f)
+		lineTo(size * 0.8f, size * 0.9f)
+		lineTo(size / 2f, size * 0.75f)
+		lineTo(size * 0.2f, size * 0.9f)
+		lineTo(size * 0.3f, size * 0.6f)
+		lineTo(size * 0.05f, size * 0.4f)
+		lineTo(size * 0.35f, size * 0.4f)
+		close()
+	}
+	canvas.drawPath(path, paint)
+
+	return bitmap
 }
 
 @Composable
@@ -606,59 +527,48 @@ private fun FavoriteLocationsPanel(
 	modifier: Modifier = Modifier
 ) {
 	Surface(
-		modifier = modifier,
+		modifier = modifier.height(200.dp),
 		shape = RoundedCornerShape(16.dp),
-		color = ComposeColor.White.copy(alpha = 0.96f),
+		tonalElevation = 8.dp,
 		shadowElevation = 4.dp
 	) {
-		Column(modifier = Modifier.padding(12.dp)) {
+		Column(modifier = Modifier.padding(16.dp)) {
 			Text(
-				text = "Lokasi Favorit (Lokal)",
+				text = "Favorite Locations",
 				style = MaterialTheme.typography.titleMedium,
-				fontWeight = FontWeight.Bold
+				fontWeight = FontWeight.Bold,
+				modifier = Modifier.padding(bottom = 8.dp)
 			)
-			Text(
-				text = "Disimpan di SharedPreferences: map_favorite_locations",
-				style = MaterialTheme.typography.bodySmall,
-				color = ComposeColor(0xFF546E7A)
-			)
-			Spacer(modifier = Modifier.height(8.dp))
 
 			if (favorites.isEmpty()) {
-				Text(
-					text = "Belum ada lokasi favorit. Tekan lama pada peta untuk menambahkan.",
-					style = MaterialTheme.typography.bodyMedium,
-					color = ComposeColor(0xFF455A64)
-				)
+				Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+					Text("Long press on map to add favorites", style = MaterialTheme.typography.bodySmall)
+				}
 			} else {
-				LazyColumn(modifier = Modifier.height(220.dp)) {
-					items(favorites, key = { it.id }) { favorite ->
+				LazyColumn {
+					items(favorites) { fav ->
 						Row(
 							modifier = Modifier
 								.fillMaxWidth()
-								.padding(vertical = 6.dp)
-								.clickable { onFocusFavorite(favorite.id) },
+								.clickable { onFocusFavorite(fav.id) }
+								.padding(vertical = 8.dp),
+							verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
 						) {
 							Column(modifier = Modifier.weight(1f)) {
-								Text(text = favorite.label, fontWeight = FontWeight.SemiBold)
+								Text(text = fav.label, style = MaterialTheme.typography.bodyLarge)
 								Text(
-									text = favorite.address,
+									text = String.format(Locale.US, "%.5f, %.5f", fav.latitude, fav.longitude),
 									style = MaterialTheme.typography.bodySmall,
-									color = ComposeColor(0xFF546E7A)
-								)
-								Text(
-									text = "${String.format(Locale.US, "%.5f", favorite.latitude)}, ${String.format(Locale.US, "%.5f", favorite.longitude)}",
-									style = MaterialTheme.typography.bodySmall,
-									color = ComposeColor(0xFF455A64)
+									color = MaterialTheme.colorScheme.onSurfaceVariant
 								)
 							}
 							Text(
-								text = "Hapus",
-								color = ComposeColor(0xFFC62828),
-								fontWeight = FontWeight.SemiBold,
+								text = "Remove",
+								style = MaterialTheme.typography.labelMedium,
+								color = MaterialTheme.colorScheme.error,
 								modifier = Modifier
-									.padding(start = 8.dp)
-									.clickable { onRemoveFavorite(favorite.id) }
+									.clickable { onRemoveFavorite(fav.id) }
+									.padding(8.dp)
 							)
 						}
 					}
@@ -670,30 +580,27 @@ private fun FavoriteLocationsPanel(
 
 private fun buildOsmRasterStyleJson(): String {
 	return """
-	{
-	  "version": 8,
-	  "name": "Nimons OSM Raster",
-	  "sources": {
-	    "osm": {
-	      "type": "raster",
-	      "tiles": [
-	        "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-	      ],
-	      "tileSize": 256,
-	      "attribution": "© OpenStreetMap contributors",
-	      "minzoom": 0,
-	      "maxzoom": 19
-	    }
-	  },
-	  "layers": [
-	    {
-	      "id": "osm-layer",
-	      "type": "raster",
-	      "source": "osm",
-	      "minzoom": 0,
-	      "maxzoom": 22
-	    }
-	  ]
-	}
-	""".trimIndent()
+    {
+      "version": 8,
+      "sources": {
+        "osm-tiles": {
+          "type": "raster",
+          "tiles": [
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          ],
+          "tileSize": 256,
+          "attribution": "© OpenStreetMap contributors"
+        }
+      },
+      "layers": [
+        {
+          "id": "osm-tiles-layer",
+          "type": "raster",
+          "source": "osm-tiles",
+          "minzoom": 0,
+          "maxzoom": 19
+        }
+      ]
+    }
+    """.trimIndent()
 }
