@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nimons360.data.remote.dto.response.FamilyDetailResponse
 import com.example.nimons360.data.repository.FamilyRepository
+import com.example.nimons360.data.repository.UserRepository
 import com.example.nimons360.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FamilyDetailViewModel @Inject constructor(
-    private val repository: FamilyRepository
+    private val repository: FamilyRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     // State Data
@@ -25,11 +27,24 @@ class FamilyDetailViewModel @Inject constructor(
     private val _actionState = MutableStateFlow<Result<String>?>(null)
     val actionState = _actionState.asStateFlow()
 
+    private val _currentUserEmail = MutableStateFlow<String?>(null)
+    val currentUserEmail = _currentUserEmail.asStateFlow()
+
     // Inisialisasi
     fun initFamilyId(id: Int) {
         if (currentFamilyId != id) {
             currentFamilyId = id
             loadFamilyDetail()
+            loadUserProfile()
+        }
+    }
+
+    private fun loadUserProfile() {
+        viewModelScope.launch {
+            val result = userRepository.getProfile()
+            if (result is Result.Success) {
+                _currentUserEmail.value = result.data.email
+            }
         }
     }
 

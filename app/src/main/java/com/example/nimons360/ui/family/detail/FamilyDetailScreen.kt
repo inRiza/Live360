@@ -13,12 +13,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.nimons360.data.remote.dto.common.FamilyDetailResponseMembersInner
 import com.example.nimons360.ui.family.detail.component.*
 import com.example.nimons360.ui.theme.Amber50
@@ -35,6 +38,7 @@ fun FamilyDetailScreen(
     // State Data
     val detailState by viewModel.familyDetailState.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
+    val currentUserEmail by viewModel.currentUserEmail.collectAsState()
     val context = LocalContext.current
 
     // Inisialisasi Data
@@ -77,9 +81,11 @@ fun FamilyDetailScreen(
         FamilyDetailContent(
             familyName = family.name ?: "Unknown Family",
             memberCount = family.members?.size ?: 0,
+            iconUrl = family.iconUrl ?: "", // Meneruskan iconUrl dari API
             isJoined = family.isMember ?: false,
             familyCode = family.familyCode ?: "",
             members = family.members ?: emptyList(),
+            currentUserEmail = currentUserEmail,
             onBack = onBack,
             onJoinFamily = { code -> viewModel.joinFamily(code) },
             onLeaveFamily = { viewModel.leaveFamily() }
@@ -91,9 +97,11 @@ fun FamilyDetailScreen(
 fun FamilyDetailContent(
     familyName: String,
     memberCount: Int,
+    iconUrl: String, // Tambahan parameter iconUrl
     isJoined: Boolean,
     familyCode: String,
     members: List<FamilyDetailResponseMembersInner>,
+    currentUserEmail: String?,
     onBack: () -> Unit,
     onJoinFamily: (String) -> Unit,
     onLeaveFamily: () -> Unit
@@ -147,18 +155,35 @@ fun FamilyDetailContent(
                         )
                         .padding(15.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = familyName,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Menampilkan Icon Keluarga menggunakan Coil
+                        AsyncImage(
+                            model = iconUrl,
+                            contentDescription = "Family Icon",
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.White.copy(alpha = 0.2f)),
+                            contentScale = ContentScale.Crop
                         )
-                        Text(
-                            text = "$memberCount members",
-                            color = Color.White.copy(alpha = 0.8f),
-                            fontSize = 15.sp
-                        )
+
+                        Spacer(modifier = Modifier.width(15.dp))
+
+                        Column {
+                            Text(
+                                text = familyName,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = "$memberCount members",
+                                color = Color.White.copy(alpha = 0.8f),
+                                fontSize = 15.sp
+                            )
+                        }
                     }
                 }
 
@@ -188,7 +213,7 @@ fun FamilyDetailContent(
                             initial = name.take(1).uppercase(),
                             avatarColor = MaterialTheme.colorScheme.secondary,
                             isBlurred = !isJoined,
-                            isYou = false // TODO: nanti disesuaiin lagi logika isYou nya
+                            isYou = (email == currentUserEmail)
                         )
                     }
                 }
@@ -268,9 +293,11 @@ fun FamilyDetailNotJoinedPreview() {
         FamilyDetailContent(
             familyName = "Keluarga Cemara",
             memberCount = 4,
+            iconUrl = "",
             isJoined = false,
             familyCode = "XXXXXX",
             members = emptyList(),
+            currentUserEmail = null,
             onBack = {},
             onJoinFamily = {},
             onLeaveFamily = {}
@@ -285,9 +312,11 @@ fun FamilyDetailJoinedPreview() {
         FamilyDetailContent(
             familyName = "Keluarga Cemara",
             memberCount = 4,
+            iconUrl = "",
             isJoined = true,
             familyCode = "MFA287",
             members = emptyList(),
+            currentUserEmail = null,
             onBack = {},
             onJoinFamily = {},
             onLeaveFamily = {}
