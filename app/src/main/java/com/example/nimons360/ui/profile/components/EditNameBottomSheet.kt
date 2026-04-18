@@ -5,12 +5,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.EditText
-import android.widget.Toast
-import com.example.nimons360.R
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import com.example.nimons360.R
 
 class EditNameBottomSheet : BottomSheetDialogFragment() {
+
+	private var onSave: ((String) -> Unit)? = null
 
 	override fun onCreateView(
 		inflater: LayoutInflater,
@@ -23,7 +25,8 @@ class EditNameBottomSheet : BottomSheetDialogFragment() {
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
 
-		val editName = view.findViewById<EditText>(R.id.edit_name)
+		val tilName = view.findViewById<TextInputLayout>(R.id.til_edit_name)
+		val editName = view.findViewById<TextInputEditText>(R.id.edit_name)
 		val btnSave = view.findViewById<Button>(R.id.btnSave)
 		val btnCancel = view.findViewById<Button>(R.id.btnCancel)
 
@@ -31,18 +34,17 @@ class EditNameBottomSheet : BottomSheetDialogFragment() {
 
 		btnSave.setOnClickListener {
 			val name = editName.text.toString().trim()
-
 			if (name.isEmpty()) {
-				editName.error = "Nama tidak boleh kosong"
+				tilName?.error = "Name cannot be empty"
 				editName.requestFocus()
 				return@setOnClickListener
 			}
-			Toast.makeText(requireContext(), "Save clicked!", Toast.LENGTH_SHORT).show()
+			tilName?.error = null
+			onSave?.invoke(name)
 			dismiss()
 		}
 
 		btnCancel.setOnClickListener {
-			Toast.makeText(requireContext(), "Cancel clicked!", Toast.LENGTH_SHORT).show()
 			dismiss()
 		}
 	}
@@ -50,12 +52,11 @@ class EditNameBottomSheet : BottomSheetDialogFragment() {
 	companion object {
 		private const val ARG_NAME = "arg_name"
 
-		fun newInstance(currentName: String): EditNameBottomSheet {
-			val sheet = EditNameBottomSheet()
-			sheet.arguments = Bundle().apply {
-				putString(ARG_NAME, currentName)
+		fun newInstance(currentName: String, onSave: (String) -> Unit): EditNameBottomSheet {
+			return EditNameBottomSheet().apply {
+				arguments = Bundle().apply { putString(ARG_NAME, currentName) }
+				this.onSave = onSave
 			}
-			return sheet
 		}
 	}
 }
