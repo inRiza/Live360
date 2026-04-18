@@ -62,12 +62,12 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.mapbox.mapboxsdk.annotations.IconFactory
-import com.mapbox.mapboxsdk.annotations.MarkerOptions
-import com.mapbox.mapboxsdk.geometry.LatLng
-import com.mapbox.mapboxsdk.maps.MapView
-import com.mapbox.mapboxsdk.maps.MapboxMap
-import com.mapbox.mapboxsdk.maps.Style
+import org.maplibre.android.annotations.IconFactory
+import org.maplibre.android.annotations.MarkerOptions
+import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.maps.MapView
+import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.Style
 import kotlin.math.roundToInt
 import java.util.Locale
 
@@ -266,13 +266,13 @@ private fun MapLibreContent(
 		}
 		return
 	}
-	var mapboxMap by remember { mutableStateOf<MapboxMap?>(null) }
+	var mapLibreMap by remember { mutableStateOf<MapLibreMap?>(null) }
 	var styleReady by remember { mutableStateOf(false) }
 	var didMoveToCurrentUser by remember { mutableStateOf(false) }
 	val markerMemberLookup = remember { mutableStateMapOf<Long, String>() }
 	val markerFavoriteLookup = remember { mutableStateMapOf<Long, String>() }
-	val memberMarkers = remember { linkedMapOf<String, com.mapbox.mapboxsdk.annotations.Marker>() }
-	val favoriteMarkers = remember { linkedMapOf<String, com.mapbox.mapboxsdk.annotations.Marker>() }
+	val memberMarkers = remember { linkedMapOf<String, org.maplibre.android.annotations.Marker>() }
+	val favoriteMarkers = remember { linkedMapOf<String, org.maplibre.android.annotations.Marker>() }
 
 	DisposableEffect(mapView, lifecycleOwner) {
 		val observer = LifecycleEventObserver { _, event ->
@@ -295,7 +295,7 @@ private fun MapLibreContent(
 		modifier = modifier,
 		factory = {
 			mapView.getMapAsync { map ->
-				mapboxMap = map
+				mapLibreMap = map
 				map.setStyle(Style.Builder().fromJson(buildOsmRasterStyleJson())) {
 					styleReady = true
 				}
@@ -320,7 +320,7 @@ private fun MapLibreContent(
 			mapView
 		},
 		update = {
-			val map = mapboxMap ?: return@AndroidView
+			val map = mapLibreMap ?: return@AndroidView
 			if (!styleReady) return@AndroidView
 			markerMemberLookup.clear()
 			markerFavoriteLookup.clear()
@@ -394,7 +394,7 @@ private fun MapLibreContent(
 				val focused = state.favoriteLocations.firstOrNull { it.id == focusedId }
 				if (focused != null) {
 					map.animateCamera(
-						com.mapbox.mapboxsdk.camera.CameraUpdateFactory.newLatLngZoom(
+						org.maplibre.android.camera.CameraUpdateFactory.newLatLngZoom(
 							LatLng(focused.latitude, focused.longitude),
 							16.0
 						)
@@ -408,9 +408,9 @@ private fun MapLibreContent(
 
 private fun syncFavoriteMarkers(
 	context: Context,
-	map: MapboxMap,
+	map: MapLibreMap,
 	favorites: List<FavoriteLocationDto>,
-	favoriteMarkers: MutableMap<String, com.mapbox.mapboxsdk.annotations.Marker>,
+	favoriteMarkers: MutableMap<String, org.maplibre.android.annotations.Marker>,
 	markerFavoriteLookup: MutableMap<Long, String>
 ) {
 	val iconFactory = IconFactory.getInstance(context)
@@ -440,9 +440,9 @@ private fun syncFavoriteMarkers(
 
 private fun syncMemberMarker(
 	context: Context,
-	map: MapboxMap,
+	map: MapLibreMap,
 	member: MemberMapUi,
-	memberMarkers: MutableMap<String, com.mapbox.mapboxsdk.annotations.Marker>,
+	memberMarkers: MutableMap<String, org.maplibre.android.annotations.Marker>,
 	markerMemberLookup: MutableMap<Long, String>,
 	pinColor: Int,
 	drawArrow: Boolean
@@ -476,7 +476,7 @@ private fun syncMemberMarker(
 }
 
 private fun animateMarkerTo(
-	marker: com.mapbox.mapboxsdk.annotations.Marker,
+	marker: org.maplibre.android.annotations.Marker,
 	target: LatLng
 ) {
 	val start = marker.position
@@ -497,7 +497,7 @@ private fun animateMarkerTo(
 
 private fun drawFavoriteMarkers(
 	context: Context,
-	map: MapboxMap,
+	map: MapLibreMap,
 	favorites: List<FavoriteLocationDto>,
 	markerFavoriteLookup: MutableMap<Long, String>
 ) {

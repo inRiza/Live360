@@ -181,12 +181,8 @@ class WebSocketManager @Inject constructor(
                 val payload = gson.fromJson(payloadElement, MemberPresencePayload::class.java)
                 _events.tryEmit(Event.PresenceReceived(payload))
             }
-
-            // if (type.contains("presence", ignoreCase = true) || type.contains("member", ignoreCase = true)) {
-            //     val payload = gson.fromJson(payloadElement, MemberPresencePayload::class.java)
-            //     _events.tryEmit(Event.PresenceReceived(payload))
-            // }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            _events.tryEmit(Event.Error("[Websocket] Failed to parse: ${e.message}"))
         }
     }
 }
