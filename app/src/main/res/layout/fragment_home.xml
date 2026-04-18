@@ -1,12 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
->
-    <TextView
-        android:layout_width="wrap_content"
+    android:fillViewport="true">
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="helloooooo banh"
-    />
-</FrameLayout>
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_marginTop="26dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="My Families"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp"/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMyFamilies"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:overScrollMode="never"/>
+        <TextView
+            android:id="@+id/tvEmptyMyFamilies"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="no families joined yet"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:paddingVertical="8dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Discover Families"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginTop="22dp"
+            android:layout_marginBottom="8dp"/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvDiscoverFamilies"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:overScrollMode="never"/>
+        <TextView
+            android:id="@+id/tvEmptyDiscoverFamilies"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="no families exists"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:paddingVertical="8dp"/>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
