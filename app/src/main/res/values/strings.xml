@@ -1,8 +1,2 @@
 <resources>
-    <string name="app_name">Nimons360</string>
-    <string name="logo">Logo Aplikasi</string>
-    <string name="jargon">Stay connected with those who matter</string>
-    <string name="input_email">Email Address</string>
-    <string name="input_password">Password</string>
-    <string name="btn_SignIn">Sign In</string>
 </resources>

@@ -48,8 +48,6 @@ class FamilyRepository @Inject constructor(
         }
     }
 
-    suspend fun discoverFamilies(): Result<List<FamilyDiscover>> = Result.Error("not implemented")
-
     suspend fun getFamilyDetail(familyId: Int): Result<FamilyDetailWrappedResponse> {
         return try {
             val response = apiService.getFamilyDetail(familyId)
@@ -128,5 +126,23 @@ class FamilyRepository @Inject constructor(
         pinnedFamilyDao.deleteById(familyId)
     }
 
+    suspend fun getMyFamilies(): Result<List<MyFamilyDetail>> {
+        return try {
+            val res = apiService.getMyFamilies()
+            if (res.isSuccessful) Result.Success(res.body()?.data ?: emptyList())
+            else Result.Error("Failed: ${res.code()}")
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Unknown error")
+        }
+    }
+    suspend fun discoverFamilies(): Result<List<FamilyDiscover>> {
+        return try {
+            val res = apiService.discoverFamilies()
+            if (res.isSuccessful) Result.Success(res.body()?.data ?: emptyList())
+            else Result.Error("Failed: ${res.code()}")
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Unknown error")
+        }
+    }
     suspend fun isPinned(familyId: Int): Boolean = false
 }

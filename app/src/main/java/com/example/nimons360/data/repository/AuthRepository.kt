@@ -24,8 +24,13 @@ class AuthRepository @Inject constructor(
 
                 // Success
                 if (loginData != null) {
-                    loginData.token?.let { tokenPreference.saveToken(it) }
-                    Result.Success(loginData)
+                    val token = loginData.token
+                    if (token.isNullOrBlank()) {
+                        Result.Error("Login gagal: token kosong")
+                    } else {
+                        tokenPreference.saveToken(token)
+                        Result.Success(loginData)
+                    }
                 } else {
                     Result.Error("Data response kosong")
                 }

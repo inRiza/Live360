@@ -8,5 +8,17 @@
         android:id="@+id/homeFragment"
         android:name="com.example.nimons360.ui.home.HomeFragment"
         android:label="Home" />
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.example.nimons360.ui.map.MapFragment"
+        android:label="Map" />
+    <fragment
+        android:id="@+id/familiesFragment"
+        android:name="com.example.nimons360.ui.families.FamiliesFragment"
+        android:label="Families" />
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.nimons360.ui.profile.ProfileFragment"
+        android:label="Profile" />
 
 </navigation>
