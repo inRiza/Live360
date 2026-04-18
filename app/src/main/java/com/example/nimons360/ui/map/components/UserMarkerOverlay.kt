@@ -62,17 +62,17 @@ fun UserMarkerOverlay(
 			Spacer(modifier = Modifier.height(8.dp))
 
 			LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-				val chips = listOf("Semua Keluarga", "Favorit")
+				val chips = listOf("Family", "Favorit")
 				items(chips) { chip ->
 					val selected =
-						(chip == "Semua Keluarga" && !isFavoritesPanelVisible) ||
+						(chip == "Family" && !isFavoritesPanelVisible) ||
 						(chip == "Favorit" && isFavoritesPanelVisible)
 					val chipText = if (chip == "Favorit") "Favorit ($favoritesCount)" else chip
 					Surface(
 						shape = RoundedCornerShape(10.dp),
 						color = if (selected) Color(0xFF1565C0) else Color(0xFFEAEAEA),
 						modifier = Modifier.clickable {
-							if (chip == "Favorit" || chip == "Semua Keluarga") {
+							if (chip == "Favorit" || chip == "Family") {
 								onFavoritesChipClick()
 							}
 						}
