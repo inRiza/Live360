@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.nimons360"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -83,6 +83,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("com.github.bumptech.glide:glide:4.16.0")
-    implementation("org.maplibre.gl:android-sdk:9.6.0")
+    implementation("org.maplibre.gl:android-sdk:11.8.3")
     implementation("com.google.android.gms:play-services-location:21.3.0")
 }
