@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class LiveUserInfoDto(
     @SerializedName("userId")
-    val userId: Int?,
+    val userId: Int, // Int? -> Int
     @SerializedName("fullName")
     val fullName: String,
     @SerializedName("email")

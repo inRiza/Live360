@@ -8,9 +8,15 @@ import com.google.gson.Gson
 import com.google.gson.JsonParser
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -24,6 +30,12 @@ class WebSocketManager @Inject constructor(
     private val okHttpClient: OkHttpClient
 ) {
 
+    private companion object {
+        const val NORMAL_CLOSE_CODE = 1000
+        const val ABNORMAL_CLOSE_CODE = 1006
+        const val MAX_RECONNECT_DELAY_MS = 5_000L
+    }
+
     sealed interface Event {
         data object Connected : Event
         data class Disconnected(val code: Int, val reason: String) : Event
@@ -33,18 +45,37 @@ class WebSocketManager @Inject constructor(
 
     private val gson = Gson()
     private var webSocket: WebSocket? = null
+    private var isConnecting = false
+    private var reconnectAttempt = 0
+    private var shouldReconnect = false
+    private var reconnectJob: Job? = null
+    private val reconnectScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 32)
     val events: SharedFlow<Event> = _events.asSharedFlow()
 
+    @Synchronized
     fun connect() {
-        if (webSocket != null) return
+        shouldReconnect = true
+        if (webSocket != null || isConnecting) return
 
         val token = tokenPreference.getToken()
         if (token.isNullOrBlank()) {
+            shouldReconnect = false
             _events.tryEmit(Event.Error("Missing auth token for websocket"))
             return
         }
+
+        openSocket(token)
+    }
+
+    @Synchronized
+    private fun openSocket(token: String) {
+        if (webSocket != null || isConnecting) return
+        isConnecting = true
+
+        reconnectJob?.cancel()
+        reconnectJob = null
 
         val request = Request.Builder()
             .url(Constants.WS_URL)
@@ -55,6 +86,8 @@ class WebSocketManager @Inject constructor(
             request,
             object : WebSocketListener() {
                 override fun onOpen(webSocket: WebSocket, response: Response) {
+                    isConnecting = false
+                    reconnectAttempt = 0
                     _events.tryEmit(Event.Connected)
                 }
 
@@ -68,21 +101,45 @@ class WebSocketManager @Inject constructor(
                 }
 
                 override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                    isConnecting = false
                     _events.tryEmit(Event.Disconnected(code, reason))
                     this@WebSocketManager.webSocket = null
+                    scheduleReconnectIfNeeded()
                 }
 
                 override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                    _events.tryEmit(Event.Error(t.message ?: "WebSocket failure"))
+                    isConnecting = false
                     this@WebSocketManager.webSocket = null
+                    _events.tryEmit(Event.Disconnected(ABNORMAL_CLOSE_CODE, "connection_failure"))
+                    _events.tryEmit(Event.Error(t.message ?: "WebSocket failure"))
+                    scheduleReconnectIfNeeded()
                 }
             }
         )
     }
 
+    @Synchronized 
     fun disconnect() {
-        webSocket?.close(1000, "Client disconnect")
+        shouldReconnect = false
+        reconnectAttempt = 0
+        reconnectJob?.cancel()
+        reconnectJob = null
+        isConnecting = false
+        webSocket?.close(NORMAL_CLOSE_CODE, "Client disconnect")
         webSocket = null
+    }
+
+    @Synchronized
+    private fun scheduleReconnectIfNeeded() {
+        if (!shouldReconnect || webSocket != null || isConnecting) return
+        if (reconnectJob?.isActive == true) return
+
+        val delayMs = (1_000L * (1L shl reconnectAttempt.coerceAtMost(2))).coerceAtMost(MAX_RECONNECT_DELAY_MS)
+        reconnectAttempt += 1
+        reconnectJob = reconnectScope.launch {
+            delay(delayMs)
+            connect()
+        }
     }
 
     fun sendPresence(payload: UpdatePresencePayload) {
@@ -120,15 +177,16 @@ class WebSocketManager @Inject constructor(
             val payloadElement = root.get("payload")
             if (payloadElement == null || !payloadElement.isJsonObject) return
 
-            if (type.equals("member_presence_updated", ignoreCase = true)
-                || type.contains("presence", ignoreCase = true)
-                || type.contains("member", ignoreCase = true)
-            ) {
+            if (type == "member_presence_updated") {
                 val payload = gson.fromJson(payloadElement, MemberPresencePayload::class.java)
                 _events.tryEmit(Event.PresenceReceived(payload))
             }
+
+            // if (type.contains("presence", ignoreCase = true) || type.contains("member", ignoreCase = true)) {
+            //     val payload = gson.fromJson(payloadElement, MemberPresencePayload::class.java)
+            //     _events.tryEmit(Event.PresenceReceived(payload))
+            // }
         } catch (_: Exception) {
-            // Ignore unrelated websocket event shapes.
         }
     }
 }
