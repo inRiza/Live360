@@ -83,4 +83,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("org.maplibre.gl:android-sdk:9.6.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 }
