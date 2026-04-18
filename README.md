@@ -25,6 +25,7 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 - Hilt (dependency injection)
 - RecyclerView (list rendering)
 - ViewBinding
+- MapLibre
 
 ---
 
