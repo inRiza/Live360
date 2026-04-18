@@ -84,12 +84,12 @@ fun UserInfoBottomSheet(
 			) {
 				MetricCard(
 					modifier = Modifier.weight(1f),
-					title = "Baterai",
+					title = "🔋 Baterai",
 					value = "${member.batteryLevel}%"
 				)
 				MetricCard(
 					modifier = Modifier.weight(1f),
-					title = "Lokasi",
+					title = "📍 Lokasi",
 					value = String.format(Locale.US, "%.4f, %.4f", member.latitude, member.longitude)
 				)
 				MetricCard(
