@@ -18,7 +18,8 @@ import com.example.nimons360.ui.family.list.FamilyModel
 fun PinnedSection(
     title: String,
     families: List<FamilyModel>,
-    onPinClick: (String) -> Unit
+    onPinClick: (String) -> Unit,
+    onFamilyClick: (String) -> Unit
 ) {
     if (families.isEmpty()) return
 
@@ -43,7 +44,8 @@ fun PinnedSection(
                         name = family.name,
                         isPinned = family.isPinned,
                         iconUrl = family.iconUrl,
-                        onPinClick = { onPinClick(family.id) }
+                        onPinClick = { onPinClick(family.id) },
+                        onItemClick = { onFamilyClick(family.id) }
                     )
 
                     if (index < families.size - 1) {

@@ -21,7 +21,8 @@ import com.example.nimons360.ui.family.list.components.PinnedSection
 @Composable
 fun FamilyScreen(
     viewModel: FamilyViewModel,
-    onAddFamilyClick: () -> Unit
+    onAddFamilyClick: () -> Unit,
+    onFamilyClick: (String) -> Unit
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
@@ -40,10 +41,10 @@ fun FamilyScreen(
         onSearchChange = { viewModel.updateSearchQuery(it) },
         onFilterSelect = { viewModel.updateFilter(it) },
         onPinClick = { clickedFamilyId ->
-            // CARI data lengkap keluarga berdasarkan ID yang diklik
+            // Cari data lengkap keluarga berdasarkan ID yang diklik
             val family = families.find { it.id == clickedFamilyId }
             if (family != null) {
-                // KIRIM ke ViewModel untuk disimpan/dihapus dari Room Database
+                // Kirim ke ViewModel
                 viewModel.togglePin(
                     familyId = family.id,
                     name = family.name,
@@ -52,6 +53,7 @@ fun FamilyScreen(
                 )
             }
         },
+        onFamilyClick = onFamilyClick,
         onAddFamilyClick = onAddFamilyClick
     )
 }
@@ -66,6 +68,7 @@ fun FamilyContent(
     onSearchChange: (String) -> Unit,
     onFilterSelect: (String) -> Unit,
     onPinClick: (String) -> Unit,
+    onFamilyClick: (String) -> Unit,
     onAddFamilyClick: () -> Unit
 ) {
     Scaffold(
@@ -86,12 +89,7 @@ fun FamilyContent(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Families", fontSize = 24.sp, fontWeight = FontWeight.Normal)
-            }
+            Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = searchQuery,
@@ -126,7 +124,8 @@ fun FamilyContent(
                 PinnedSection(
                     title = "PINNED",
                     families = pinnedFamilies,
-                    onPinClick = onPinClick
+                    onPinClick = onPinClick,
+                    onFamilyClick = onFamilyClick
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -134,7 +133,8 @@ fun FamilyContent(
                 PinnedSection(
                     title = "ALL FAMILIES",
                     families = allFamilies,
-                    onPinClick = onPinClick
+                    onPinClick = onPinClick,
+                    onFamilyClick = onFamilyClick
                 )
             }
 

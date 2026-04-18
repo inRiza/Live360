@@ -25,23 +25,23 @@ fun FamilyItem(
     name: String,
     isPinned: Boolean,
     iconUrl: String,
-    onPinClick: () -> Unit
+    onPinClick: () -> Unit,
+    onItemClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* Tindakan saat item ditekan (Navigasi ke Detail) */ }
+            .clickable { onItemClick() } // AKTIFKAN KLIK DI SINI
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Memuat gambar dari URL
         AsyncImage(
             model = iconUrl,
             contentDescription = "Family Icon",
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFF8F9FA)), // placeholder selagi loading
+                .background(Color(0xFFF8F9FA)),
             contentScale = ContentScale.Crop
         )
 
