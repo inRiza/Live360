@@ -23,6 +23,7 @@ class FamilyViewModel @Inject constructor(
     private val repository: FamilyRepository
 ) : ViewModel() {
 
+    // Setup Variabel State Flow
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
@@ -39,17 +40,26 @@ class FamilyViewModel @Inject constructor(
         fetchFamiliesData()
     }
 
+    // Fetch Families Data
     fun fetchFamiliesData() {
         viewModelScope.launch {
             _isLoading.value = true
+
             val allRes = repository.getAllFamilies()
             val myRes = repository.getMyFamilies()
-            if (allRes is Result.Success) _allFamiliesApi.value = allRes.data
-            if (myRes is Result.Success) _myFamiliesApi.value = myRes.data
+
+            if (allRes is Result.Success) {
+                _allFamiliesApi.value = allRes.data
+            }
+            if (myRes is Result.Success) {
+                _myFamiliesApi.value = myRes.data
+            }
+
             _isLoading.value = false
         }
     }
 
+    // Combine dan Filter Data
     val families = combine(
         _allFamiliesApi,
         _myFamiliesApi,
@@ -58,46 +68,71 @@ class FamilyViewModel @Inject constructor(
         repository.getPinnedFamilies()
     ) { all, my, filter, query, pinnedList ->
 
-        val pinnedIds = pinnedList.map { it.id }.toSet()
+        val pinnedIds = mutableSetOf<Int>()
+        for (pinnedFamily in pinnedList) {
+            pinnedIds.add(pinnedFamily.id)
+        }
 
-        val baseList = if (filter == "All") {
-            all.map {
-                FamilyModel(
-                    id = it.id.toString(),
-                    name = it.name ?: "",
-                    isPinned = pinnedIds.contains(it.id),
-                    iconUrl = it.iconUrl ?: ""
+        val baseList = mutableListOf<FamilyModel>()
+        // Filter All dan MyFamilies
+        if (filter == "All") {
+            for (item in all) {
+                val familyModel = FamilyModel(
+                    id = item.id.toString(),
+                    name = item.name ?: "",
+                    isPinned = pinnedIds.contains(item.id),
+                    iconUrl = item.iconUrl ?: ""
                 )
+                baseList.add(familyModel)
             }
         } else {
-            my.map {
-                FamilyModel(
-                    id = it.id.toString(),
-                    name = it.name ?: "",
-                    isPinned = pinnedIds.contains(it.id),
-                    iconUrl = it.iconUrl ?: ""
+            for (item in my) {
+                val familyModel = FamilyModel(
+                    id = item.id.toString(),
+                    name = item.name ?: "",
+                    isPinned = pinnedIds.contains(item.id),
+                    iconUrl = item.iconUrl ?: ""
                 )
+                baseList.add(familyModel)
             }
         }
 
-        // Filtering
-        if (query.isBlank()) {
+        // Search Family
+        val isQueryEmpty = query.isBlank()
+
+        if (isQueryEmpty) {
             baseList
         } else {
-            baseList.filter { it.name.contains(query, ignoreCase = true) }
+            baseList.filter { family ->
+                family.name.contains(query, ignoreCase = true)
+            }
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun updateSearchQuery(query: String) { _searchQuery.value = query }
-    fun updateFilter(filter: String) { _selectedFilter.value = filter }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun updateFilter(filter: String) {
+        _selectedFilter.value = filter
+    }
+
+    // Pinned Family Toggle
     fun togglePin(familyId: String, name: String, iconUrl: String, isCurrentlyPinned: Boolean) {
         viewModelScope.launch {
-            val id = familyId.toIntOrNull() ?: return@launch
-            if (isCurrentlyPinned) {
-                repository.unpinFamily(id)
-            } else {
-                repository.pinFamily(id, name, iconUrl)
+            val id = familyId.toIntOrNull()
+
+            if (id != null) {
+                if (isCurrentlyPinned) {
+                    repository.unpinFamily(id)
+                } else {
+                    repository.pinFamily(id, name, iconUrl)
+                }
             }
         }
     }

@@ -17,6 +17,7 @@ class CreateFamilyViewModel @Inject constructor(
     private val familyRepository: FamilyRepository
 ) : ViewModel() {
 
+    // Daftar Icon
     val availableIcons = listOf(
         R.drawable.family_icon_1, R.drawable.family_icon_2,
         R.drawable.family_icon_3, R.drawable.family_icon_4,
@@ -24,8 +25,10 @@ class CreateFamilyViewModel @Inject constructor(
         R.drawable.family_icon_7, R.drawable.family_icon_8
     )
 
+    // State Variabel
     private val _selectedIcon = MutableStateFlow(availableIcons[0])
     val selectedIcon: StateFlow<Int> = _selectedIcon
+
     private val _createState = MutableStateFlow<Result<FamilyDetailResponse>?>(null)
     val createState: StateFlow<Result<FamilyDetailResponse>?> = _createState
 
@@ -34,7 +37,10 @@ class CreateFamilyViewModel @Inject constructor(
     }
 
     fun createFamily(familyName: String) {
-        if (familyName.isBlank()) {
+        val isNameEmpty = familyName.isBlank()
+
+        // Validasi Input
+        if (isNameEmpty) {
             _createState.value = Result.Error("Nama keluarga tidak boleh kosong")
             return
         }
@@ -42,10 +48,15 @@ class CreateFamilyViewModel @Inject constructor(
         viewModelScope.launch {
             _createState.value = Result.Loading
 
-            val iconIndex = availableIcons.indexOf(_selectedIcon.value) + 1
-            val iconUrl = "https://mad.labpro.hmif.dev/assets/family_icon_$iconIndex.png"
+            // URL Icon
+            val currentIcon = _selectedIcon.value
+            val iconIndex = availableIcons.indexOf(currentIcon)
+            val iconNumber = iconIndex + 1
+            val iconUrl = "https://mad.labpro.hmif.dev/assets/family_icon_" + iconNumber + ".png"
 
+            // Create Family
             val result = familyRepository.createFamily(familyName, iconUrl)
+
             _createState.value = result
         }
     }

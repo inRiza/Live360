@@ -13,18 +13,21 @@ class IconPickerAdapter(
     private val icons: List<Int>,
     private val onIconSelected: (Int) -> Unit
 ) : RecyclerView.Adapter<IconPickerAdapter.IconViewHolder>() {
-    private var selectedPosition = 0 // default icon
+    private var selectedPosition = 0
+
     inner class IconViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val ivIcon: ImageView = itemView.findViewById(R.id.ivIcon)
         private val cvIconContainer: MaterialCardView = itemView.findViewById(R.id.cvIconContainer)
 
+        // Binding
         fun bind(iconResId: Int, position: Int) {
             ivIcon.setImageResource(iconResId)
 
-            // Visual saat icon terpilih
+            // Cek Status Terpilih
             val isSelected = selectedPosition == position
+
             if (isSelected) {
-                cvIconContainer.strokeWidth = 4 // px
+                cvIconContainer.strokeWidth = 5
                 cvIconContainer.setCardBackgroundColor(
                     ContextCompat.getColor(itemView.context, R.color.blue_100)
                 )
@@ -35,7 +38,7 @@ class IconPickerAdapter(
                 )
             }
 
-            // Ketika iconnya diklik
+            // Handle Klik
             itemView.setOnClickListener {
                 val previousPosition = selectedPosition
                 selectedPosition = bindingAdapterPosition
@@ -49,14 +52,26 @@ class IconPickerAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): IconViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_icon_picker, parent, false)
+        // Inflate Layout
+        val inflater = LayoutInflater.from(parent.context)
+        val view = inflater.inflate(
+            R.layout.item_icon_picker,
+            parent,
+            false
+        )
+
         return IconViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: IconViewHolder, position: Int) {
-        holder.bind(icons[position], position)
+        val currentIcon = icons[position]
+        holder.bind(
+            iconResId = currentIcon,
+            position = position
+        )
     }
 
-    override fun getItemCount(): Int = icons.size
+    override fun getItemCount(): Int {
+        return icons.size
+    }
 }

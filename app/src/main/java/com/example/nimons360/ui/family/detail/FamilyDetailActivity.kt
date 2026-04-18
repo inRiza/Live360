@@ -14,6 +14,7 @@ class FamilyDetailActivity : ComponentActivity() {
 
         val familyId = intent.getIntExtra(EXTRA_FAMILY_ID, -1)
 
+        // Setup UI Compose
         setContent {
             Nimons360Theme {
                 FamilyDetailScreen(

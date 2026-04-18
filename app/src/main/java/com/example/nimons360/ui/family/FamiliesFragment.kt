@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels // Import ini sangat penting
+import androidx.fragment.app.viewModels
 import com.example.nimons360.ui.family.create.CreateFamilyActivity
 import com.example.nimons360.ui.family.detail.FamilyDetailActivity
 import com.example.nimons360.ui.family.list.FamilyScreen
@@ -33,9 +33,10 @@ class FamiliesFragment : Fragment() {
                             startActivity(intent)
                         },
                         onFamilyClick = { familyId ->
-                            val intent = Intent(requireContext(), FamilyDetailActivity::class.java).apply {
-                                putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, familyId.toIntOrNull() ?: -1)
-                            }
+                            val intent = Intent(requireContext(), FamilyDetailActivity::class.java)
+                            val parsedId = familyId.toIntOrNull() ?: -1
+
+                            intent.putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, parsedId)
                             startActivity(intent)
                         }
                     )

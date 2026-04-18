@@ -9,11 +9,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.nimons360.ui.theme.Grey300
+import com.example.nimons360.ui.theme.Grey900
 import com.example.nimons360.ui.theme.Nimons360Theme
+import com.example.nimons360.ui.theme.White
 
 @Composable
 fun FilterChipRow(
@@ -23,8 +25,8 @@ fun FilterChipRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         CustomFilterChip(
             text = "All",
@@ -40,22 +42,31 @@ fun FilterChipRow(
 }
 
 @Composable
-private fun CustomFilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
+private fun CustomFilterChip(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else White
+    val textColor = if (isSelected) White else Grey900
+    val borderStroke = if (!isSelected) BorderStroke(1.dp, Grey300) else null
+
     Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White,
-        border = if (!isSelected) BorderStroke(1.dp, Color.LightGray) else null,
+        shape = RoundedCornerShape(10.dp),
+        color = backgroundColor,
+        border = borderStroke,
         modifier = Modifier.clickable { onClick() }
     ) {
         Text(
             text = text,
-            color = if (isSelected) Color.White else Color.Black,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            color = textColor,
+            fontSize = 15.sp,
+            modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp)
         )
     }
 }
 
+// Preview
 @Preview(showBackground = true)
 @Composable
 fun FilterChipRowPreview() {

@@ -32,55 +32,58 @@ fun FamilyDetailScreen(
     familyId: Int,
     onBack: () -> Unit
 ) {
+    // State Data
     val detailState by viewModel.familyDetailState.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
     val context = LocalContext.current
 
-    // Inisialisasi data berdasarkan ID dari Activity
+    // Inisialisasi Data
     LaunchedEffect(familyId) {
         viewModel.initFamilyId(familyId)
     }
 
-    // Tampilkan Toast jika aksi Join/Leave selesai
+    // Toast Join/Leave
     LaunchedEffect(actionState) {
-        when (actionState) {
-            is Result.Success -> {
-                Toast.makeText(context, (actionState as Result.Success).data, Toast.LENGTH_SHORT).show()
-                viewModel.clearActionState()
-            }
-            is Result.Error -> {
-                Toast.makeText(context, (actionState as Result.Error).message, Toast.LENGTH_SHORT).show()
-                viewModel.clearActionState()
-            }
-            else -> {}
+        val currentState = actionState
+
+        if (currentState is Result.Success) {
+            Toast.makeText(context, currentState.data, Toast.LENGTH_SHORT).show()
+            viewModel.clearActionState()
+        } else if (currentState is Result.Error) {
+            Toast.makeText(context, currentState.message, Toast.LENGTH_SHORT).show()
+            viewModel.clearActionState()
         }
     }
 
-    // Tampilan berdasarkan State Utama
-    when (val state = detailState) {
-        is Result.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+    val currentDetailState = detailState
+
+    if (currentDetailState is Result.Loading) {
+        // Loading
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
-        is Result.Error -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = "Error: ${state.message}", color = MaterialTheme.colorScheme.error)
-            }
-        }
-        is Result.Success -> {
-            val family = state.data
-            FamilyDetailContent(
-                familyName = family.name ?: "Unknown Family",
-                memberCount = family.members?.size ?: 0,
-                isJoined = family.isMember ?: false,
-                familyCode = family.familyCode ?: "",
-                members = family.members ?: emptyList(),
-                onBack = onBack,
-                onJoinFamily = { code -> viewModel.joinFamily(code) },
-                onLeaveFamily = { viewModel.leaveFamily() }
+    } else if (currentDetailState is Result.Error) {
+        // Error
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = "Error: ${currentDetailState.message}",
+                color = MaterialTheme.colorScheme.error
             )
         }
+    } else if (currentDetailState is Result.Success) {
+        // Success
+        val family = currentDetailState.data
+
+        FamilyDetailContent(
+            familyName = family.name ?: "Unknown Family",
+            memberCount = family.members?.size ?: 0,
+            isJoined = family.isMember ?: false,
+            familyCode = family.familyCode ?: "",
+            members = family.members ?: emptyList(),
+            onBack = onBack,
+            onJoinFamily = { code -> viewModel.joinFamily(code) },
+            onLeaveFamily = { viewModel.leaveFamily() }
+        )
     }
 }
 
@@ -95,77 +98,137 @@ fun FamilyDetailContent(
     onJoinFamily: (String) -> Unit,
     onLeaveFamily: () -> Unit
 ) {
+    // State Dialog
     var showJoinDialog by remember { mutableStateOf(false) }
     var showLeaveDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
 
-            // Custom Top Bar
+            // Bagian Top Bar
             Row(
-                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
+                    .padding(horizontal = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
-                Text(familyName, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(start = 8.dp))
+                IconButton(onClick = onBack) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+                Text(
+                    text = familyName,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    modifier = Modifier.padding(start = 10.dp)
+                )
             }
 
-            Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-                Spacer(modifier = Modifier.height(8.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp)
+            ) {
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Header Card
-                Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp)).padding(16.dp)) {
+                // Card Informasi Keluarga
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        .padding(15.dp)
+                ) {
                     Column {
-                        Text(familyName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("$memberCount members", color = Color.White.copy(0.8f), fontSize = 12.sp)
+                        Text(
+                            text = familyName,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
+                        Text(
+                            text = "$memberCount members",
+                            color = Color.White.copy(alpha = 0.8f),
+                            fontSize = 15.sp
+                        )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
+                // Kode Join Keluarga
                 if (isJoined) {
                     FamilyCodeSection(code = familyCode)
                     Spacer(modifier = Modifier.height(20.dp))
                 }
 
-                Text("MEMBERS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = "MEMBERS",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
                 // Daftar Anggota
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(members) { member ->
                         val name = member.fullName ?: "Unknown"
                         val email = member.email ?: "**********"
+
                         MemberItem(
                             name = name,
                             email = email,
                             initial = name.take(1).uppercase(),
                             avatarColor = MaterialTheme.colorScheme.secondary,
                             isBlurred = !isJoined,
-                            isYou = false // TODO: update logika 'isYou' kalau sudah menyimpan ID User
+                            isYou = false // TODO: nanti disesuaiin lagi logika isYou nya
                         )
                     }
                 }
 
+                // Button Join/Leave
                 if (!isJoined) {
-                    Surface(color = Amber50, shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        Row(modifier = Modifier.padding(12.dp)) {
-                            Icon(Icons.Default.Info, null, tint = Orange600, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Join this family to see member details and map interaction.", fontSize = 12.sp)
+                    Surface(
+                        color = Amber50,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(10.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                tint = Orange600,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Join this family to see member details and map interaction.",
+                                fontSize = 15.sp
+                            )
                         }
                     }
                     Button(
                         onClick = { showJoinDialog = true },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).height(50.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 15.dp)
+                            .height(50.dp)
                     ) {
                         Text("Join Family")
                     }
                 } else {
                     TextButton(
                         onClick = { showLeaveDialog = true },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 15.dp)
                     ) {
                         Text("Leave Family", color = MaterialTheme.colorScheme.error)
                     }
@@ -174,30 +237,60 @@ fun FamilyDetailContent(
         }
     }
 
-    if (showJoinDialog) JoinFamilyDialog(onDismiss = { showJoinDialog = false }, onJoin = { onJoinFamily(it); showJoinDialog = false })
-    if (showLeaveDialog) LeaveFamilyDialog(familyName, onDismiss = { showLeaveDialog = false }, onConfirm = { onLeaveFamily(); showLeaveDialog = false })
+    // Komponen Dialog
+    if (showJoinDialog) {
+        JoinFamilyDialog(
+            onDismiss = { showJoinDialog = false },
+            onJoin = {
+                onJoinFamily(it)
+                showJoinDialog = false
+            }
+        )
+    }
+
+    if (showLeaveDialog) {
+        LeaveFamilyDialog(
+            familyName = familyName,
+            onDismiss = { showLeaveDialog = false },
+            onConfirm = {
+                onLeaveFamily()
+                showLeaveDialog = false
+            }
+        )
+    }
 }
 
+// Preview Layar
+@Preview(showBackground = true, name = "1. Belum Bergabung")
+@Composable
+fun FamilyDetailNotJoinedPreview() {
+    Nimons360Theme {
+        FamilyDetailContent(
+            familyName = "Keluarga Cemara",
+            memberCount = 4,
+            isJoined = false,
+            familyCode = "XXXXXX",
+            members = emptyList(),
+            onBack = {},
+            onJoinFamily = {},
+            onLeaveFamily = {}
+        )
+    }
+}
 
-// Preview
-//@Preview(showBackground = true, name = "1. Belum Bergabung")
-//@Composable
-//fun FamilyDetailNotJoinedPreview() {
-//    Nimons360Theme {
-//        FamilyDetailContent(
-//            isJoined = false, // Simulasi belum join
-//            onBack = {}, onJoinFamily = {}, onLeaveFamily = {}
-//        )
-//    }
-//}
-//
-//@Preview(showBackground = true, name = "2. Sudah Bergabung")
-//@Composable
-//fun FamilyDetailJoinedPreview() {
-//    Nimons360Theme {
-//        FamilyDetailContent(
-//            isJoined = true, // Simulasi sudah join
-//            onBack = {}, onJoinFamily = {}, onLeaveFamily = {}
-//        )
-//    }
-//}
+@Preview(showBackground = true, name = "2. Sudah Bergabung")
+@Composable
+fun FamilyDetailJoinedPreview() {
+    Nimons360Theme {
+        FamilyDetailContent(
+            familyName = "Keluarga Cemara",
+            memberCount = 4,
+            isJoined = true,
+            familyCode = "MFA287",
+            members = emptyList(),
+            onBack = {},
+            onJoinFamily = {},
+            onLeaveFamily = {}
+        )
+    }
+}

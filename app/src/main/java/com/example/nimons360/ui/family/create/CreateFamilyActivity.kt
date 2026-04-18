@@ -20,6 +20,8 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class CreateFamilyActivity : AppCompatActivity() {
+
+    // Deklarasi Variabel
     private val viewModel: CreateFamilyViewModel by viewModels()
     private lateinit var etFamilyName: TextInputEditText
     private lateinit var tvCreate: TextView
@@ -28,44 +30,72 @@ class CreateFamilyActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_family)
 
+        // Inisialisasi View
         val ivSelectedIcon = findViewById<ImageView>(R.id.ivSelectedIcon)
         val rvIcons = findViewById<RecyclerView>(R.id.rvIcons)
         val tvCancel = findViewById<TextView>(R.id.tvCancel)
         etFamilyName = findViewById(R.id.etFamilyName)
         tvCreate = findViewById(R.id.tvCreate)
 
-        // Setup RecyclerView & Listener
-        rvIcons.adapter = IconPickerAdapter(viewModel.availableIcons) { viewModel.setSelectedIcon(it) }
-        rvIcons.layoutManager = GridLayoutManager(this, 5)
+        // Setup RecyclerView
+        val adapter = IconPickerAdapter(
+            icons = viewModel.availableIcons,
+            onIconSelected = { selectedIconId ->
+                viewModel.setSelectedIcon(selectedIconId)
+            }
+        )
+        rvIcons.adapter = adapter
+        rvIcons.layoutManager = GridLayoutManager(this, 4)
 
-        tvCancel.setOnClickListener { finish() }
-        tvCreate.setOnClickListener { viewModel.createFamily(etFamilyName.text.toString()) }
+        // Setup Listener Tombol
+        tvCancel.setOnClickListener {
+            finish()
+        }
 
+        tvCreate.setOnClickListener {
+            val familyName = etFamilyName.text.toString()
+            viewModel.createFamily(familyName)
+        }
+
+        // Observe
         observeViewModel(ivSelectedIcon)
     }
 
     private fun observeViewModel(ivSelectedIcon: ImageView) {
+        // Pilihan Icon
         lifecycleScope.launch {
-            viewModel.selectedIcon.collect { ivSelectedIcon.setImageResource(it) }
+            viewModel.selectedIcon.collect { iconResId ->
+                ivSelectedIcon.setImageResource(iconResId)
+            }
         }
 
+        // Status Pembuatan Keluarga
         lifecycleScope.launch {
             viewModel.createState.collect { result ->
-                when (result) {
-                    is Result.Loading -> tvCreate.isEnabled = false
-                    is Result.Success -> {
-                        val intent = Intent(this@CreateFamilyActivity, FamilyDetailActivity::class.java).apply {
-                            putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, result.data.id)
-                        }
-                        startActivity(intent)
-                        finish()
-                    }
-                    is Result.Error -> {
-                        tvCreate.isEnabled = true
-                        Toast.makeText(this@CreateFamilyActivity, result.message, Toast.LENGTH_SHORT).show()
-                    }
-                    else -> {}
+
+                if (result is Result.Loading) {
+                    tvCreate.isEnabled = false
+                } else if (result is Result.Success) {
+                    val intent = Intent(
+                        this@CreateFamilyActivity,
+                        FamilyDetailActivity::class.java
+                    )
+                    intent.putExtra(
+                        FamilyDetailActivity.EXTRA_FAMILY_ID,
+                        result.data.id
+                    )
+
+                    startActivity(intent)
+                    finish()
+                } else if (result is Result.Error) {
+                    tvCreate.isEnabled = true
+                    Toast.makeText(
+                        this@CreateFamilyActivity,
+                        result.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
+
             }
         }
     }

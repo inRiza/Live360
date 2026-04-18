@@ -12,12 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.nimons360.ui.theme.Orange50
 import com.example.nimons360.ui.theme.Orange800
-
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.nimons360.ui.theme.Nimons360Theme
 
 @Composable
@@ -29,38 +28,67 @@ fun MemberItem(
     isBlurred: Boolean = false,
     isYou: Boolean = false
 ) {
+    // Blurring State
+    var rowModifier = Modifier
+        .fillMaxWidth()
+        .padding(vertical = 10.dp)
+
+    if (isBlurred) {
+        rowModifier = rowModifier.blur(10.dp)
+    }
+
+    // Detail Anggota
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            // Memberikan efek blur jika user belum bergabung
-            .then(if (isBlurred) Modifier.blur(10.dp) else Modifier),
+        modifier = rowModifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Foto Profil (pake inisial)
         Box(
-            modifier = Modifier.size(44.dp).background(avatarColor, CircleShape),
+            modifier = Modifier
+                .size(45.dp)
+                .background(avatarColor, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(initial, color = Color.White, fontWeight = FontWeight.Bold)
+            Text(
+                text = initial,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
         }
 
-        Column(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
-            Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(email, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // Informasi Teks
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 15.dp)
+        ) {
+            Text(
+                text = name,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp
+            )
+            Text(
+                text = email,
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
+        // Label isYou
         if (isYou && !isBlurred) {
             Surface(color = Orange50, shape = CircleShape) {
                 Text(
-                    "You", color = Orange800, fontSize = 12.sp,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                    text = "You",
+                    color = Orange800,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                 )
             }
         }
     }
 }
 
-
+// Preview
 @Preview(showBackground = true)
 @Composable
 fun MemberItemPreview() {
