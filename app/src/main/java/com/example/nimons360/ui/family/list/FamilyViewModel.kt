@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class FamilyModel(
-    val id: String,
+    val id: Int,
     val name: String,
     val isPinned: Boolean,
     val iconUrl: String
@@ -78,7 +78,7 @@ class FamilyViewModel @Inject constructor(
         if (filter == "All") {
             for (item in all) {
                 val familyModel = FamilyModel(
-                    id = item.id.toString(),
+                    id = item.id ?: 0,
                     name = item.name ?: "",
                     isPinned = pinnedIds.contains(item.id),
                     iconUrl = item.iconUrl ?: ""
@@ -88,7 +88,7 @@ class FamilyViewModel @Inject constructor(
         } else {
             for (item in my) {
                 val familyModel = FamilyModel(
-                    id = item.id.toString(),
+                    id = item.id ?: 0,
                     name = item.name ?: "",
                     isPinned = pinnedIds.contains(item.id),
                     iconUrl = item.iconUrl ?: ""
@@ -123,16 +123,12 @@ class FamilyViewModel @Inject constructor(
     }
 
     // Pinned Family Toggle
-    fun togglePin(familyId: String, name: String, iconUrl: String, isCurrentlyPinned: Boolean) {
+    fun togglePin(familyId: Int, name: String, iconUrl: String, isCurrentlyPinned: Boolean) {
         viewModelScope.launch {
-            val id = familyId.toIntOrNull()
-
-            if (id != null) {
-                if (isCurrentlyPinned) {
-                    repository.unpinFamily(id)
-                } else {
-                    repository.pinFamily(id, name, iconUrl)
-                }
+            if (isCurrentlyPinned) {
+                repository.unpinFamily(familyId)
+            } else {
+                repository.pinFamily(familyId, name, iconUrl)
             }
         }
     }
