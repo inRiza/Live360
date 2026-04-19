@@ -94,9 +94,6 @@ class MainActivity : AppCompatActivity() {
             if (destination is FloatingWindow) return@addOnDestinationChangedListener
 
             if (destination.id == R.id.profileFragment) {
-                // jangan set semua isChecked false: BottomNavigationView akan memaksa item terakhir
-                // (Families) terpilih dan merusak navigasi. Tetap pakai tab sebelumnya secara internal,
-                // tapi samakan warna + matikan active indicator supaya tidak ada tab yang terlihat aktif.
                 bottomNav.isItemActiveIndicatorEnabled = false
                 val muted = MaterialColors.getColor(
                     bottomNav,

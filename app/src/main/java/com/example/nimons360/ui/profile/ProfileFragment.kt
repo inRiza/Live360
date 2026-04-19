@@ -1,10 +1,14 @@
 package com.example.nimons360.ui.profile
 
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -41,7 +45,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         btnSignOut.setOnClickListener {
-            viewModel.signOut()
+            showSignOutConfirmationDialog()
         }
 
         observeViewModel(tvAvatar, tvName, tvEmail)
@@ -95,5 +99,28 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             .map { it[0].uppercaseChar() }
             .take(2)
             .joinToString("")
+    }
+
+    private fun showSignOutConfirmationDialog() {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_sign_out_confirmation, null)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        dialogView.findViewById<TextView>(R.id.tv_cancel_sign_out).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<TextView>(R.id.tv_confirm_sign_out).setOnClickListener {
+            dialog.dismiss()
+            viewModel.signOut()
+        }
+
+        dialog.show()
     }
 }
