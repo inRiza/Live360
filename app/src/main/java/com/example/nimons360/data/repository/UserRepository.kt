@@ -22,7 +22,7 @@ class UserRepository @Inject constructor(
                         fullName = body.fullName
                     )
                 )
-                else Result.Error("[User Profile] Empty response")
+                else Result.Error("User Profile Empty response")
             } else {
                 Result.Error("Failed: ${res.code()}")
             }
@@ -45,7 +45,7 @@ class UserRepository @Inject constructor(
                         fullName = body.fullName
                     )
                 )
-                else Result.Error("[Update Profile] Empty response")
+                else Result.Error("Update Profile Empty response")
             } else {
                 Result.Error("Failed: ${res.code()}")
             }

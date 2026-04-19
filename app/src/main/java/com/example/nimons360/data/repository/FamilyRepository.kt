@@ -27,10 +27,10 @@ class FamilyRepository @Inject constructor(
             if (response.isSuccessful) {
                 Result.Success(response.body()?.data ?: emptyList())
             } else {
-                Result.Error("Gagal mengambil daftar keluarga: ${response.code()}")
+                Result.Error("Failed to get all families: ${response.code()}")
             }
         } catch (e: Exception) {
-            Result.Error(e.localizedMessage ?: "Terjadi kesalahan jaringan")
+            Result.Error(e.message ?: "Unknown error")
         }
     }
 
@@ -40,10 +40,10 @@ class FamilyRepository @Inject constructor(
             if (response.isSuccessful) {
                 Result.Success(response.body()?.data ?: emptyList())
             } else {
-                Result.Error("Gagal mengambil keluarga Anda: ${response.code()}")
+                Result.Error("Failed to retrieve my families: ${response.code()}")
             }
         } catch (e: Exception) {
-            Result.Error(e.localizedMessage ?: "Terjadi kesalahan jaringan")
+            Result.Error(e.message ?: "Unknown error")
         }
     }
 
@@ -62,12 +62,12 @@ class FamilyRepository @Inject constructor(
             val response = apiService.getFamilyDetail(familyId)
             if (response.isSuccessful) {
                 val data = response.body()?.data
-                if (data != null) Result.Success(data) else Result.Error("Data keluarga tidak ditemukan")
+                if (data != null) Result.Success(data) else Result.Error("Families data not found")
             } else {
-                Result.Error("Gagal mengambil detail: ${response.code()}")
+                Result.Error("Failed to retrieve family detail: ${response.code()}")
             }
         } catch (e: Exception) {
-            Result.Error(e.localizedMessage ?: "Terjadi kesalahan jaringan")
+            Result.Error(e.message ?: "Unknown error")
         }
     }
 
@@ -81,13 +81,13 @@ class FamilyRepository @Inject constructor(
                 if (responseBody?.data != null) {
                     Result.Success(responseBody.data)
                 } else {
-                    Result.Error("Gagal mendapatkan data family")
+                    Result.Error("Failed to create family")
                 }
             } else {
                 Result.Error("Error: ${response.code()}")
             }
         } catch (e: Exception) {
-            Result.Error(e.localizedMessage ?: "Terjadi kesalahan jaringan")
+            Result.Error(e.message ?: "Unknown error")
         }
     }
 
@@ -97,12 +97,12 @@ class FamilyRepository @Inject constructor(
             val response = apiService.joinFamily(request)
             if (response.isSuccessful) {
                 val data = response.body()?.data
-                if (data != null) Result.Success(data) else Result.Error("Gagal bergabung")
+                if (data != null) Result.Success(data) else Result.Error("Failed to join family")
             } else {
-                Result.Error("Kode keluarga salah atau error: ${response.code()}")
+                Result.Error("Wrong code or error: ${response.code()}")
             }
         } catch (e: Exception) {
-            Result.Error(e.localizedMessage ?: "Terjadi kesalahan jaringan")
+            Result.Error(e.message ?: "Unknown error")
         }
     }
 
@@ -112,12 +112,12 @@ class FamilyRepository @Inject constructor(
             val response = apiService.leaveFamily(request)
             if (response.isSuccessful) {
                 val data = response.body()?.data
-                if (data != null) Result.Success(data) else Result.Error("Gagal keluar dari keluarga")
+                if (data != null) Result.Success(data) else Result.Error("Failed to leave family")
             } else {
-                Result.Error("Gagal keluar: ${response.code()}")
+                Result.Error("Failed to leave family: ${response.code()}")
             }
         } catch (e: Exception) {
-            Result.Error(e.localizedMessage ?: "Terjadi kesalahan jaringan")
+            Result.Error(e.message ?: "Unknown error")
         }
     }
 

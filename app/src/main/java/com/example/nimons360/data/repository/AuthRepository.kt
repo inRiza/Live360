@@ -26,19 +26,19 @@ class AuthRepository @Inject constructor(
                 if (loginData != null) {
                     val token = loginData.token
                     if (token.isNullOrBlank()) {
-                        Result.Error("Login gagal: token kosong")
+                        Result.Error("Failed to login: empty token")
                     } else {
                         tokenPreference.saveToken(token)
                         Result.Success(loginData)
                     }
                 } else {
-                    Result.Error("Data response kosong")
+                    Result.Error("No response (body empty)")
                 }
 
             } else {
                 // Error
                 val errorBodyString = response.errorBody()?.string()
-                var errorMessage = "Login gagal: Kode ${response.code()}"
+                var errorMessage = "Login failed: ${response.code()}"
 
                 if (!errorBodyString.isNullOrEmpty()) {
                     try {
@@ -46,14 +46,14 @@ class AuthRepository @Inject constructor(
                         // Mengambil message dari root JSON sesuai ErrorResponse di openapi.yaml
                         errorMessage = jsonObject.optString("message", errorMessage)
                     } catch (e: Exception) {
-                        errorMessage = "Terjadi kesalahan: $errorBodyString"
+                        errorMessage = "Unknown error: $errorBodyString"
                     }
                 }
 
                 Result.Error(errorMessage)
             }
         } catch (e: Exception) {
-            Result.Error("Terjadi kesalahan jaringan: ${e.localizedMessage}")
+            Result.Error("Something went wrong: ${e.message}")
         }
     }
 
