@@ -23,6 +23,11 @@ class FamilyViewModel @Inject constructor(
     private val repository: FamilyRepository
 ) : ViewModel() {
 
+    companion object {
+        private const val FETCH_SIZE = 10
+        private const val SEARCH_DEBOUNCE_MS = 300L
+    }
+
     // Setup Variabel State Flow
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
@@ -33,11 +38,27 @@ class FamilyViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore = _isLoadingMore.asStateFlow()
+
+    private val _currentSize = MutableStateFlow(1)
+
     private val _allFamiliesApi = MutableStateFlow<List<FamilyBasic>>(emptyList())
     private val _myFamiliesApi = MutableStateFlow<List<MyFamilyDetail>>(emptyList())
+    private val _debouncedQuery = MutableStateFlow("")
 
     init {
         fetchFamiliesData()
+        // debounce search query
+        viewModelScope.launch {
+            _searchQuery
+                .debounce(SEARCH_DEBOUNCE_MS)
+                .distinctUntilChanged()
+                .collect { query ->
+                    _debouncedQuery.value = query
+                    _currentSize.value = 1
+                }
+        }
     }
 
     // Fetch Families Data
@@ -59,12 +80,34 @@ class FamilyViewModel @Inject constructor(
         }
     }
 
+    fun loadNextPage() {
+        if (_isLoadingMore.value || isLoading.value) return
+
+        val currentFiltered = filteredFamilies()
+        val currentShown = _currentSize.value * FETCH_SIZE
+
+        if (currentShown >= currentFiltered.size) return // all showed
+
+        _isLoadingMore.value = true
+
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(200) // delay
+            _currentSize.value += 1
+            _isLoadingMore.value = false
+        }
+    }
+
+    // semua families after filter sebelum load selanjutnya
+    private fun filteredFamilies(): List<FamilyModel> {
+        return families.value
+    }
+
     // Combine dan Filter Data
     val families = combine(
         _allFamiliesApi,
         _myFamiliesApi,
         _selectedFilter,
-        _searchQuery,
+        _debouncedQuery,
         repository.getPinnedFamilies()
     ) { all, my, filter, query, pinnedList ->
 
@@ -73,39 +116,29 @@ class FamilyViewModel @Inject constructor(
             pinnedIds.add(pinnedFamily.id)
         }
 
-        val baseList = mutableListOf<FamilyModel>()
-        // Filter All dan MyFamilies
-        if (filter == "All") {
-            for (item in all) {
-                val familyModel = FamilyModel(
+        val baseList = if (filter == "All") {
+            all.map { item ->
+                FamilyModel(
                     id = item.id ?: 0,
                     name = item.name ?: "",
                     isPinned = pinnedIds.contains(item.id),
                     iconUrl = item.iconUrl ?: ""
                 )
-                baseList.add(familyModel)
             }
         } else {
-            for (item in my) {
-                val familyModel = FamilyModel(
+            my.map { item ->
+                FamilyModel(
                     id = item.id ?: 0,
                     name = item.name ?: "",
                     isPinned = pinnedIds.contains(item.id),
                     iconUrl = item.iconUrl ?: ""
                 )
-                baseList.add(familyModel)
             }
         }
 
-        // Search Family
-        val isQueryEmpty = query.isBlank()
-
-        if (isQueryEmpty) {
-            baseList
-        } else {
-            baseList.filter { family ->
-                family.name.contains(query, ignoreCase = true)
-            }
+        if (query.isBlank()) baseList
+        else baseList.filter {
+            it.name.contains(query, ignoreCase = true)
         }
 
     }.stateIn(
@@ -114,12 +147,30 @@ class FamilyViewModel @Inject constructor(
         initialValue = emptyList()
     )
 
+    // families that are shown
+    val fetchedFamilies = combine(families, _currentSize) { all, size ->
+        all.take(size * FETCH_SIZE)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val hasMore = combine(families, _currentSize) { all, size ->
+        all.size > size * FETCH_SIZE
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
+
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
     }
 
     fun updateFilter(filter: String) {
         _selectedFilter.value = filter
+        _currentSize.value = 1 // reset after filter change
     }
 
     // Pinned Family Toggle
