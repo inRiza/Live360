@@ -68,6 +68,8 @@ class FamilyDetailViewModel @Inject constructor(
                 loadFamilyDetail() // refresh data UI
             } else if (result is Result.Error) {
                 _actionState.value = Result.Error(result.message)
+            } else {
+                _actionState.value = Result.Error("Unknown Error.")
             }
         }
     }
@@ -85,6 +87,8 @@ class FamilyDetailViewModel @Inject constructor(
                 loadFamilyDetail() // refresh data UI
             } else if (result is Result.Error) {
                 _actionState.value = Result.Error(result.message)
+            } else {
+                _actionState.value = Result.Error("Unknown Error.")
             }
         }
     }

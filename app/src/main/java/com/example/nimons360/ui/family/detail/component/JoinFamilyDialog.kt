@@ -38,7 +38,9 @@ fun JoinFamilyDialog(
                 Spacer(modifier = Modifier.height(15.dp))
                 OutlinedTextField(
                     value = codeInput,
-                    onValueChange = { codeInput = it.uppercase() },
+                    onValueChange = {
+                        if (it.length <= 6) codeInput = it.uppercase()
+                    },
                     label = { Text("Family Code") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -46,7 +48,10 @@ fun JoinFamilyDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onJoin(codeInput) }) {
+            Button(
+                onClick = { onJoin(codeInput) },
+                enabled = codeInput.length == 6
+            ) {
                 Text("Join")
             }
         },

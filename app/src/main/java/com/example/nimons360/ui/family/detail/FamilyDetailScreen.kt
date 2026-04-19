@@ -210,7 +210,11 @@ fun FamilyDetailContent(
                         MemberItem(
                             name = name,
                             email = email,
-                            initial = name.take(1).uppercase(),
+                            initial = name.trim().split(" ")
+                                .filter { it.isNotEmpty() }
+                                .map { it[0].uppercaseChar() }
+                                .take(2)
+                                .joinToString(""),
                             avatarColor = MaterialTheme.colorScheme.secondary,
                             isBlurred = !isJoined,
                             isYou = (email == currentUserEmail)

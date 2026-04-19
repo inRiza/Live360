@@ -29,13 +29,10 @@ fun MemberItem(
     isYou: Boolean = false
 ) {
     // Blurring State
-    var rowModifier = Modifier
+    val rowModifier = Modifier
         .fillMaxWidth()
         .padding(vertical = 10.dp)
-
-    if (isBlurred) {
-        rowModifier = rowModifier.blur(10.dp)
-    }
+        .then(if (isBlurred) Modifier.blur(10.dp) else Modifier)
 
     // Detail Anggota
     Row(

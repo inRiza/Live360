@@ -7,7 +7,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.nimons360.R
@@ -53,7 +55,7 @@ class CreateFamilyActivity : AppCompatActivity() {
         }
 
         tvCreate.setOnClickListener {
-            val familyName = etFamilyName.text.toString()
+            val familyName = etFamilyName.text.toString().trim()
             viewModel.createFamily(familyName)
         }
 
@@ -64,38 +66,42 @@ class CreateFamilyActivity : AppCompatActivity() {
     private fun observeViewModel(ivSelectedIcon: ImageView) {
         // Pilihan Icon
         lifecycleScope.launch {
-            viewModel.selectedIcon.collect { iconResId ->
-                ivSelectedIcon.setImageResource(iconResId)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.selectedIcon.collect { iconResId ->
+                    ivSelectedIcon.setImageResource(iconResId)
+                }
             }
         }
 
         // Status Pembuatan Keluarga
         lifecycleScope.launch {
-            viewModel.createState.collect { result ->
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.createState.collect { result ->
 
-                if (result is Result.Loading) {
-                    tvCreate.isEnabled = false
-                } else if (result is Result.Success) {
-                    val intent = Intent(
-                        this@CreateFamilyActivity,
-                        FamilyDetailActivity::class.java
-                    )
-                    intent.putExtra(
-                        FamilyDetailActivity.EXTRA_FAMILY_ID,
-                        result.data.id
-                    )
+                    if (result is Result.Loading) {
+                        tvCreate.isEnabled = false
+                    } else if (result is Result.Success) {
+                        val intent = Intent(
+                            this@CreateFamilyActivity,
+                            FamilyDetailActivity::class.java
+                        )
+                        intent.putExtra(
+                            FamilyDetailActivity.EXTRA_FAMILY_ID,
+                            result.data.id
+                        )
 
-                    startActivity(intent)
-                    finish()
-                } else if (result is Result.Error) {
-                    tvCreate.isEnabled = true
-                    Toast.makeText(
-                        this@CreateFamilyActivity,
-                        result.message,
-                        Toast.LENGTH_SHORT
-                    ).show()
+                        startActivity(intent)
+                        finish()
+                    } else if (result is Result.Error) {
+                        tvCreate.isEnabled = true
+                        Toast.makeText(
+                            this@CreateFamilyActivity,
+                            result.message,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
                 }
-
             }
         }
     }
