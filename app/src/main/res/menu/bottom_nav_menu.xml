@@ -1,9 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+>
     <item
         android:id="@+id/homeFragment"
-        android:title="Home" />
-    <item
-        android:id="@+id/profileFragment"
-        android:title="Profile" />
+        android:icon="@drawable/ic_home"
+        android:title="Home"
+    />
+    <!-- TODO: wait map fragment -->
+    <item 
+        android:id="@+id/mapFragment" 
+        android:icon="@drawable/ic_location"
+        android:title="Map"
+    />
+    <!-- TODO: wait families fragment -->
+    <item 
+        android:id="@+id/familiesFragment" 
+        android:icon="@drawable/ic_family"
+        android:title="Families"
+    />
 </menu>

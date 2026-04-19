@@ -25,7 +25,7 @@ interface ApiService {
     suspend fun discoverFamilies(): Response<ApiFamiliesDiscoverGet200Response>
 
     @GET("api/families/{familyId}")
-    suspend fun getFamilyDetail(@Path("familyId") familyId: Int): Response<FamilyDetailResponse>
+    suspend fun getFamilyDetail(@Path("familyId") familyId: Int): Response<FamilyDetailWrappedResponse>
 
     @POST("api/families")
     suspend fun createFamily(@Body request: CreateFamilyRequest): Response<ApiFamiliesPost200Response>

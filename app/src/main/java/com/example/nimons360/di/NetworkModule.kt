@@ -1,7 +1,7 @@
 package com.example.nimons360.di
 
-import android.util.Log
 import com.example.nimons360.BuildConfig
+import android.util.Log
 import com.example.nimons360.data.local.preference.TokenPreference
 import com.example.nimons360.data.remote.api.ApiService
 import com.example.nimons360.utils.TokenExpiredInterceptor
@@ -18,6 +18,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+    
     @Provides
     @Singleton
     fun provideOkHttpClient(

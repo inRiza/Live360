@@ -107,7 +107,7 @@ class LoginActivity : AppCompatActivity() {
             etEmail.isEnabled = false
             etPassword.isEnabled = false
         } else {
-            btnSignIn.text = getString(R.string.btn_SignIn)
+            btnSignIn.text = "Sign In"
             btnSignIn.isEnabled = true
             etEmail.isEnabled = true
             etPassword.isEnabled = true
