@@ -1,5 +1,6 @@
 package com.example.nimons360.ui.home
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.nimons360.databinding.FragmentHomeBinding
+import com.example.nimons360.ui.family.detail.FamilyDetailActivity
 import com.example.nimons360.ui.home.adapter.DiscoverFamilyAdapter
 import com.example.nimons360.ui.home.adapter.MyFamilyAdapter
 import dagger.hilt.android.AndroidEntryPoint
@@ -42,7 +44,10 @@ class HomeFragment : Fragment() {
 
     private fun setupRecyclerViews() {
         myFamilyAdapter = MyFamilyAdapter(emptyList()) { family ->
-            // TODO: navigate ke detail
+            val intent = Intent(requireContext(), FamilyDetailActivity::class.java).apply {
+                putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, family.id ?: -1)
+            }
+            startActivity(intent)
         }
         binding.rvMyFamilies.apply {
             layoutManager = LinearLayoutManager(
@@ -55,10 +60,16 @@ class HomeFragment : Fragment() {
         discoverAdapter = DiscoverFamilyAdapter(
             emptyList(),
             onJoinClick = { family ->
-                // TODO: join family
+                val intent = Intent(requireContext(), FamilyDetailActivity::class.java).apply {
+                    putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, family.id ?: -1)
+                }
+                startActivity(intent)
             },
             onItemClick = { family ->
-                // TODO: navigate ke detail
+                val intent = Intent(requireContext(), FamilyDetailActivity::class.java).apply {
+                    putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, family.id ?: -1)
+                }
+                startActivity(intent)
             }
         )
         binding.rvDiscoverFamilies.apply {
@@ -74,7 +85,10 @@ class HomeFragment : Fragment() {
                 launch {
                     viewModel.myFamilies.collect { families ->
                         myFamilyAdapter = MyFamilyAdapter(families) { family ->
-                            // TODO: navigate ke detail
+                            val intent = Intent(requireContext(), FamilyDetailActivity::class.java).apply {
+                                putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, family.id ?: -1)
+                            }
+                            startActivity(intent)
                         }
                         binding.rvMyFamilies.adapter = myFamilyAdapter
 
@@ -88,10 +102,16 @@ class HomeFragment : Fragment() {
                         discoverAdapter = DiscoverFamilyAdapter(
                             families,
                             onJoinClick = { family ->
-                                // TODO: join family
+                                val intent = Intent(requireContext(), FamilyDetailActivity::class.java).apply {
+                                    putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, family.id ?: -1)
+                                }
+                                startActivity(intent)
                             },
                             onItemClick = { family ->
-                                // TODO: navigate ke detail
+                                val intent = Intent(requireContext(), FamilyDetailActivity::class.java).apply {
+                                    putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, family.id ?: -1)
+                                }
+                                startActivity(intent)
                             }
                         )
                         binding.rvDiscoverFamilies.adapter = discoverAdapter
@@ -103,6 +123,11 @@ class HomeFragment : Fragment() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.loadData()
     }
 
     override fun onDestroyView() {
