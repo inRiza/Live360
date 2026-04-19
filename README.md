@@ -76,6 +76,7 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 ![Sign Out Dialog](screenshots/11signout.jpeg)
 
 12. Leave Family Dialog
+    
 ![Leave Family Dialog](screenshots/12leavefam.jpeg)
 
 ---
@@ -115,6 +116,7 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 ---
 
 ## Bonus
-
-ini nanti diisi
+- Search Family
+- Internet Status
+- Mark Favorite Location
 
