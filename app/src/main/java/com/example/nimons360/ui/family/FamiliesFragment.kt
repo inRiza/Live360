@@ -34,9 +34,7 @@ class FamiliesFragment : Fragment() {
                         },
                         onFamilyClick = { familyId ->
                             val intent = Intent(requireContext(), FamilyDetailActivity::class.java)
-                            val parsedId = familyId.toIntOrNull() ?: -1
-
-                            intent.putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, parsedId)
+                            intent.putExtra(FamilyDetailActivity.EXTRA_FAMILY_ID, familyId)
                             startActivity(intent)
                         }
                     )
