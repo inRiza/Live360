@@ -79,6 +79,9 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
     
 ![Leave Family Dialog](screenshots/12leavefam.jpeg)
 
+13. Join Family Dialog
+![Join Family Dialog](screenshots/13joinfamdialog.jpeg)
+
 ---
 
 ## Cara Menjalankan
