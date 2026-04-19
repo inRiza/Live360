@@ -76,6 +76,7 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 ![Sign Out Dialog](screenshots/11signout.jpeg)
 
 12. Leave Family Dialog
+    
 ![Leave Family Dialog](screenshots/12leavefam.jpeg)
 
 13. Join Family Dialog
@@ -103,7 +104,7 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 
 | NIM      | Nama                    | Tugas                                                                                                          |
 | -------- | ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| 13523144 | Muhammad Nazih Najmudin | Login, Families (Create, Leave & Join, Landing & Pinned & Filter)                                              |
+| 13523144 | Muhammad Nazih Najmudin | Login, Families (Create, Leave & Join, Landing & Pinned & Filter & Search)                                              |
 | 13523158 | Lukas Raja Agripa       | OpenAPI (.yaml, runner), Map (Internet Status & Mark Location)                                                 |
 | 13523164 | Muhammad Rizain Firdaus | Profile & Edit, Logout, Network Sensing, Header & Bottom Bar (Navigation), Home (MyFamily & Discover Families) |
 
@@ -118,6 +119,7 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 ---
 
 ## Bonus
-
-ini nanti diisi
+- Search Family
+- Internet Status
+- Mark Favorite Location
 
