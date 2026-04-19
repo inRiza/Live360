@@ -41,7 +41,8 @@
                     android:clickable="true"
                     android:contentDescription="Edit name"
                     android:focusable="true"
-                    android:padding="5dp"
+                    android:padding="7dp"
+                    android:scaleType="centerInside"
                     android:src="@android:drawable/ic_menu_edit"
                     android:tint="@color/white" />
 
