@@ -101,7 +101,7 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 
 | NIM      | Nama                    | Tugas                                                                                                          |
 | -------- | ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| 13523144 | Muhammad Nazih Najmudin | Login, Families (Create, Leave & Join, Landing & Pinned & Filter)                                              |
+| 13523144 | Muhammad Nazih Najmudin | Login, Families (Create, Leave & Join, Landing & Pinned & Filter & Search)                                              |
 | 13523158 | Lukas Raja Agripa       | OpenAPI (.yaml, runner), Map (Internet Status & Mark Location)                                                 |
 | 13523164 | Muhammad Rizain Firdaus | Profile & Edit, Logout, Network Sensing, Header & Bottom Bar (Navigation), Home (MyFamily & Discover Families) |
 
