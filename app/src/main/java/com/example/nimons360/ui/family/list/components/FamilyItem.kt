@@ -1,7 +1,6 @@
 package com.example.nimons360.ui.family.list.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,13 +14,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.nimons360.ui.theme.Blue100
+import com.example.nimons360.ui.theme.Blue600
+import com.example.nimons360.ui.theme.Grey100
 import com.example.nimons360.ui.theme.Grey300
-import com.example.nimons360.ui.theme.Grey50
+import com.example.nimons360.ui.theme.Grey600
+import com.example.nimons360.ui.theme.Grey900
 import com.example.nimons360.ui.theme.Nimons360Theme
+import com.example.nimons360.ui.theme.White
 
 @Composable
 fun FamilyItem(
@@ -31,42 +36,66 @@ fun FamilyItem(
     onPinClick: () -> Unit,
     onItemClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onItemClick() }
-            .padding(horizontal = 15.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        onClick = onItemClick,
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        // Icon Keluarga
-        AsyncImage(
-            model = iconUrl,
-            contentDescription = "Family Icon",
+        Row(
             modifier = Modifier
-                .size(50.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Grey50),
-            contentScale = ContentScale.Crop
-        )
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(if (isPinned) Blue100 else Grey100),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = iconUrl,
+                    contentDescription = "Family Icon",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
 
-        Spacer(modifier = Modifier.width(15.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
-        // Teks Nama Keluarga
-        Text(
-            text = name,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 15.sp,
-            modifier = Modifier.weight(1f)
-        )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = name,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                    color = Grey900,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
-        // Tombol Pin
-        IconButton(onClick = onPinClick) {
-            Icon(
-                imageVector = if (isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
-                contentDescription = "Pin Family",
-                tint = if (isPinned) MaterialTheme.colorScheme.primary else Grey300,
-                modifier = Modifier.rotate(45f)
-            )
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = if (isPinned) "Pinned family" else "Family",
+                    fontSize = 12.sp,
+                    color = Grey600
+                )
+            }
+
+            IconButton(onClick = onPinClick) {
+                Icon(
+                    imageVector = if (isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
+                    contentDescription = "Pin Family",
+                    tint = if (isPinned) Blue600 else Grey300,
+                    modifier = Modifier.rotate(45f)
+                )
+            }
         }
     }
 }

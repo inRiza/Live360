@@ -15,12 +15,11 @@ class MyFamilyAdapter(
     private val onClick: (MyFamilyDetail) -> Unit
 ) : RecyclerView.Adapter<MyFamilyAdapter.ViewHolder>() {
 
-    // warna avatar berbeda tiap posisi, sesuai design
+    // ava colors
     private val avatarColors = listOf(
         0xFF4CAF50.toInt(), // green
         0xFF2196F3.toInt(), // blue
         0xFFE91E63.toInt(), // pink
-        0xFFFF9800.toInt(), // orange
     )
 
     inner class ViewHolder(val binding: ItemMyFamilyBinding) : RecyclerView.ViewHolder(binding.root)
@@ -67,8 +66,6 @@ class MyFamilyAdapter(
             b.memberExtra.apply {
                 visibility = View.VISIBLE
                 text = "+${members.size - 3}"
-                setTextColor(Color.WHITE)
-                background.setTint(avatarColors[3])
             }
         }
 

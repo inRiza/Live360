@@ -24,9 +24,17 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.nimons360.data.remote.dto.common.FamilyDetailResponseMembersInner
 import com.example.nimons360.ui.family.detail.component.*
-import com.example.nimons360.ui.theme.Amber50
+import com.example.nimons360.ui.theme.Blue100
+import com.example.nimons360.ui.theme.Blue600
+import com.example.nimons360.ui.theme.Grey100
+import com.example.nimons360.ui.theme.Grey50
+import com.example.nimons360.ui.theme.Grey600
+import com.example.nimons360.ui.theme.Grey900
 import com.example.nimons360.ui.theme.Nimons360Theme
 import com.example.nimons360.ui.theme.Orange600
+import com.example.nimons360.ui.theme.Orange50
+import com.example.nimons360.ui.theme.Red600
+import com.example.nimons360.ui.theme.White
 import com.example.nimons360.utils.Result
 
 @Composable
@@ -111,7 +119,7 @@ fun FamilyDetailContent(
     var showLeaveDialog by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = Grey50
     ) { padding ->
         Column(
             modifier = Modifier
@@ -134,6 +142,7 @@ fun FamilyDetailContent(
                     text = familyName,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
+                    color = Grey900,
                     modifier = Modifier.padding(start = 10.dp)
                 )
             }
@@ -146,41 +155,49 @@ fun FamilyDetailContent(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // Card Informasi Keluarga
-                Box(
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .padding(15.dp)
                 ) {
                     Row(
+                        modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Menampilkan Icon Keluarga menggunakan Coil
-                        AsyncImage(
-                            model = iconUrl,
-                            contentDescription = "Family Icon",
+                        Box(
                             modifier = Modifier
-                                .size(50.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color.White.copy(alpha = 0.2f)),
-                            contentScale = ContentScale.Crop
-                        )
+                                .size(54.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Blue100),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AsyncImage(
+                                model = iconUrl,
+                                contentDescription = "Family Icon",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(8.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Grey100),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
 
                         Spacer(modifier = Modifier.width(15.dp))
 
                         Column {
                             Text(
                                 text = familyName,
-                                color = Color.White,
+                                color = Grey900,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp
                             )
                             Text(
                                 text = "$memberCount members",
-                                color = Color.White.copy(alpha = 0.8f),
+                                color = Grey600,
                                 fontSize = 15.sp
                             )
                         }
@@ -196,14 +213,16 @@ fun FamilyDetailContent(
                 }
 
                 Text(
-                    text = "MEMBERS",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Members",
+                    color = Grey600,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
                 )
 
                 // Daftar Anggota
                 LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(members) { member ->
+                    val avaColors = listOf(Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFE91E63), Color(0xFFFF9800))
+                    items(members.withIndex().toList()) { (index, member) ->
                         val name = member.fullName ?: "Unknown"
                         val email = member.email ?: "**********"
 
@@ -215,7 +234,7 @@ fun FamilyDetailContent(
                                 .map { it[0].uppercaseChar() }
                                 .take(2)
                                 .joinToString(""),
-                            avatarColor = MaterialTheme.colorScheme.secondary,
+                            avatarColor = avaColors[index % avaColors.size],
                             isBlurred = !isJoined,
                             isYou = (email == currentUserEmail)
                         )
@@ -225,8 +244,8 @@ fun FamilyDetailContent(
                 // Button Join/Leave
                 if (!isJoined) {
                     Surface(
-                        color = Amber50,
-                        shape = RoundedCornerShape(10.dp),
+                        color = Orange50,
+                        shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(modifier = Modifier.padding(10.dp)) {
@@ -245,21 +264,32 @@ fun FamilyDetailContent(
                     }
                     Button(
                         onClick = { showJoinDialog = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Blue600,
+                            contentColor = White
+                        ),
+                        shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 15.dp)
-                            .height(50.dp)
+                            .height(52.dp)
                     ) {
                         Text("Join Family")
                     }
                 } else {
-                    TextButton(
+                    Button(
                         onClick = { showLeaveDialog = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Red600,
+                            contentColor = White
+                        ),
+                        shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(52.dp)
                             .padding(bottom = 15.dp)
                     ) {
-                        Text("Leave Family", color = MaterialTheme.colorScheme.error)
+                        Text("Leave Family")
                     }
                 }
             }

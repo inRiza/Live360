@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.nimons360.R
 import com.example.nimons360.data.remote.dto.common.FamilyDiscover
 import com.example.nimons360.databinding.ItemDiscoverFamilyBinding
 
@@ -15,11 +16,11 @@ class DiscoverFamilyAdapter(
     private val onItemClick: (FamilyDiscover) -> Unit
 ) : RecyclerView.Adapter<DiscoverFamilyAdapter.ViewHolder>() {
 
+    // ava colors
     private val avatarColors = listOf(
-        0xFF4CAF50.toInt(),
-        0xFF2196F3.toInt(),
-        0xFFE91E63.toInt(),
-        0xFFFF9800.toInt(),
+        0xFF4CAF50.toInt(), // green
+        0xFF2196F3.toInt(), // blue
+        0xFFE91E63.toInt(), // pink
     )
 
     inner class ViewHolder(val binding: ItemDiscoverFamilyBinding) : RecyclerView.ViewHolder(binding.root)
@@ -63,8 +64,6 @@ class DiscoverFamilyAdapter(
             b.memberExtra.apply {
                 visibility = View.VISIBLE
                 text = "+${members.size - 3}"
-                setTextColor(Color.WHITE)
-                background.setTint(avatarColors[3])
             }
         }
 

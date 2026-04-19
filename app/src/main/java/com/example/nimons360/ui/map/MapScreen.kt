@@ -29,7 +29,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -142,8 +146,6 @@ fun MapScreen(viewModel: MapViewModel) {
 			modifier = Modifier
 				.fillMaxSize()
 				.padding(horizontal = 12.dp, vertical = 10.dp),
-			familyOptions = uiState.familyOptions,
-			selectedFamilyId = uiState.selectedFamilyId,
 			searchQuery = uiState.searchQuery,
 			isConnected = uiState.isWsConnected,
 			nearbyCount = uiState.nearbyMembers.size,
@@ -151,7 +153,7 @@ fun MapScreen(viewModel: MapViewModel) {
 			favoritesCount = uiState.favoriteLocations.size,
 			isFavoritesPanelVisible = uiState.isFavoritesPanelVisible,
 			currentUser = uiState.currentUser,
-			onFamilySelected = viewModel::onFamilyFilterChanged,
+			currentUserMarkerColor = uiState.currentUser?.let(viewModel::resolveMarkerColor),
 			onSearchQueryChanged = viewModel::onSearchQueryChanged,
 			onFavoritesChipClick = viewModel::toggleFavoritesPanel
 		)
@@ -171,7 +173,7 @@ fun MapScreen(viewModel: MapViewModel) {
 		MapFloatingControls(
 			modifier = Modifier
 				.align(Alignment.BottomEnd)
-				.padding(end = 14.dp, bottom = if (uiState.currentUser != null) 172.dp else 28.dp),
+				.padding(end = 14.dp, bottom = if (uiState.currentUser != null) 226.dp else 56.dp),
 			onResetNorth = { resetNorthRequestId += 1 },
 			onRecenter = { recenterRequestId += 1 }
 		)
@@ -187,6 +189,7 @@ fun MapScreen(viewModel: MapViewModel) {
 	uiState.selectedMember?.let { member ->
 		UserInfoBottomSheet(
 			member = member,
+			memberMarkerColor = viewModel.resolveMarkerColor(member),
 			onDismiss = viewModel::dismissMemberSheet
 		)
 	}
@@ -449,14 +452,18 @@ private fun MapFloatingControls(
 	) {
 		Surface(
 			modifier = Modifier
-				.size(46.dp)
+				.size(52.dp)
 				.clickable { onResetNorth() },
 			shape = CircleShape,
 			color = ComposeColor.White.copy(alpha = 0.95f),
 			shadowElevation = 6.dp
 		) {
 			Box(contentAlignment = Alignment.Center) {
-				Text(text = "🧭")
+				Icon(
+					imageVector = Icons.Default.Explore,
+					contentDescription = "Reset north",
+					tint = ComposeColor(0xFF1976D2)
+				)
 			}
 		}
 
@@ -469,7 +476,11 @@ private fun MapFloatingControls(
 			shadowElevation = 8.dp
 		) {
 			Box(contentAlignment = Alignment.Center) {
-				Text(text = "🔵")
+				Icon(
+					imageVector = Icons.Default.MyLocation,
+					contentDescription = "Recenter",
+					tint = ComposeColor.White
+				)
 			}
 		}
 	}
@@ -567,7 +578,7 @@ private fun createMemberBitmap(context: Context, name: String, color: Int, rotat
 	if (drawArrow) {
 		canvas.save()
 		canvas.rotate(rotation, size / 2f, size / 2f)
-		paint.color = Color.parseColor("#002A6E")
+		paint.color = color
 		val path = android.graphics.Path().apply {
 			moveTo(size / 2f, size * 0.02f)
 			lineTo(size / 2f - size * 0.15f, size * 0.30f)
