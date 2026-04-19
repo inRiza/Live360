@@ -13,6 +13,11 @@ class FamilyDetailActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val familyId = intent.getIntExtra(EXTRA_FAMILY_ID, -1)
+        // guard if id is invalid
+        if (familyId == -1) {
+            finish()
+            return
+        }
 
         // Setup UI Compose
         setContent {
