@@ -31,6 +31,53 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 
 ## Screenshot
 
+1. Home
+
+![Home](screenshots/1home.jpeg)
+
+2. Family Detail
+
+![Family Detail](screenshots/2famdetail.jpeg)
+
+3. Profile
+
+![Profile](screenshots/3profile.jpeg)
+
+4. Map
+
+![Map](screenshots/4map.jpeg)
+
+5. Detail User (Map Bottom Sheet)
+
+![Detail User](screenshots/5detailuser.jpeg)
+
+6. Families List
+
+![Families List](screenshots/6famlist.jpeg)
+
+7. Join Family
+
+![Join Family](screenshots/7joinfam.jpeg)
+
+8. Create Family
+
+![Create Family](screenshots/8createfam.jpeg)
+
+9. My Families
+
+![My Families](screenshots/9myfam.jpeg)
+
+10. Network Sensing
+
+![Network Sensing](screenshots/10networksensing.jpeg)
+
+11. Sign Out Dialog
+
+![Sign Out Dialog](screenshots/11signout.jpeg)
+
+12. Leave Family Dialog
+![Leave Family Dialog](screenshots/12leavefam.jpeg)
+
 ---
 
 ## Cara Menjalankan
