@@ -16,26 +16,31 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import com.example.nimons360.ui.map.FamilyFilterOption
 import com.example.nimons360.ui.map.MemberMapUi
 import java.util.Locale
 
 @Composable
 fun UserMarkerOverlay(
 	modifier: Modifier = Modifier,
+	familyOptions: List<FamilyFilterOption>,
+	selectedFamilyId: Int?,
 	searchQuery: String,
 	isConnected: Boolean,
 	nearbyCount: Int,
@@ -43,24 +48,30 @@ fun UserMarkerOverlay(
 	favoritesCount: Int,
 	isFavoritesPanelVisible: Boolean,
 	currentUser: MemberMapUi?,
+	onFamilySelected: (Int?) -> Unit,
 	onSearchQueryChanged: (String) -> Unit,
 	onFavoritesChipClick: () -> Unit
 ) {
 	Box(modifier = modifier) {
 		Column(modifier = Modifier.fillMaxWidth()) {
-			OutlinedTextField(
+			FamilySelectorDropdown(
+				familyOptions = familyOptions,
+				selectedFamilyId = selectedFamilyId,
+				onFamilySelected = onFamilySelected
+			)
+
+			Spacer(modifier = Modifier.height(8.dp))
+
+			TextField(
 				value = searchQuery,
 				onValueChange = onSearchQueryChanged,
-				modifier = Modifier.fillMaxWidth(),
-				shape = RoundedCornerShape(24.dp),
+				modifier = Modifier
+					.fillMaxWidth()
+					.clip(RoundedCornerShape(24.dp)),
 				singleLine = true,
 				placeholder = {
 					Text("Cari lokasi atau anggota...")
-				},
-				colors = TextFieldDefaults.colors(
-					focusedContainerColor = Color.White.copy(alpha = 0.95f),
-					unfocusedContainerColor = Color.White.copy(alpha = 0.92f)
-				)
+				}
 			)
 
 			Spacer(modifier = Modifier.height(8.dp))
@@ -72,19 +83,21 @@ fun UserMarkerOverlay(
 						(chip == "Family" && !isFavoritesPanelVisible) ||
 						(chip == "Favorit" && isFavoritesPanelVisible)
 					val chipText = if (chip == "Favorit") "Favorit ($favoritesCount)" else chip
-					Surface(
-						shape = RoundedCornerShape(10.dp),
-						color = if (selected) Color(0xFF1565C0) else Color(0xFFEAEAEA),
-						modifier = Modifier.clickable {
-							if (chip == "Favorit" || chip == "Family") {
-								onFavoritesChipClick()
+					Box(
+						modifier = Modifier
+							.clip(RoundedCornerShape(10.dp))
+							.background(if (selected) Color(0xFF1565C0) else Color(0xFFEAEAEA))
+							.clickable {
+								if (chip == "Favorit" || chip == "Family") {
+									onFavoritesChipClick()
+								}
 							}
-						}
+							.padding(horizontal = 12.dp, vertical = 7.dp),
+						contentAlignment = Alignment.Center
 					) {
 						Text(
 							text = chipText,
-							color = if (selected) Color.White else Color(0xFF1C1C1C),
-							modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+							color = if (selected) Color.White else Color(0xFF1C1C1C)
 						)
 					}
 				}
@@ -105,14 +118,15 @@ fun UserMarkerOverlay(
 		}
 
 		currentUser?.let { user ->
-			Surface(
+			Box(
 				modifier = Modifier
 					.fillMaxWidth()
-					.align(Alignment.BottomCenter),
-				shape = RoundedCornerShape(18.dp),
-				color = Color.White.copy(alpha = 0.94f)
+					.align(Alignment.BottomCenter)
+					.clip(RoundedCornerShape(18.dp))
+					.background(Color.White.copy(alpha = 0.94f))
+					.padding(14.dp)
 			) {
-				Column(modifier = Modifier.padding(14.dp)) {
+				Column {
 					Row(verticalAlignment = Alignment.CenterVertically) {
 						Box(
 							modifier = Modifier
@@ -172,6 +186,129 @@ fun UserMarkerOverlay(
 }
 
 @Composable
+private fun FamilySelectorDropdown(
+	familyOptions: List<FamilyFilterOption>,
+	selectedFamilyId: Int?,
+	onFamilySelected: (Int?) -> Unit
+) {
+	var expanded by remember { mutableStateOf(false) }
+	val selectedOption = familyOptions.firstOrNull { it.id == selectedFamilyId }
+	val selectedLabel = selectedOption?.name ?: "Semua Familyku"
+
+	Box(modifier = Modifier.fillMaxWidth()) {
+		// Selected family display
+		Box(
+			modifier = Modifier
+				.fillMaxWidth()
+				.clip(RoundedCornerShape(24.dp))
+				.background(Color.White.copy(alpha = 0.92f))
+				.clickable { expanded = !expanded }
+				.padding(horizontal = 12.dp, vertical = 10.dp),
+			contentAlignment = Alignment.CenterStart
+		) {
+			Row(
+				modifier = Modifier.fillMaxWidth(),
+				verticalAlignment = Alignment.CenterVertically
+			) {
+				Box(
+					modifier = Modifier
+						.size(12.dp)
+						.clip(CircleShape)
+						.background(Color(selectedOption?.color ?: 0xFF2196F3.toInt()))
+				)
+				Spacer(modifier = Modifier.width(8.dp))
+				Text(
+					text = selectedLabel,
+					color = Color(0xFF1C1C1C),
+					fontWeight = FontWeight.Medium
+				)
+				Spacer(modifier = Modifier.weight(1f))
+				Text(
+					text = if (expanded) "▲" else "▼",
+					color = Color(0xFF666666)
+				)
+			}
+		}
+
+		// Dropdown menu
+		if (expanded) {
+			Box(
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(top = 50.dp)
+					.clip(RoundedCornerShape(16.dp))
+					.background(Color.White.copy(alpha = 0.98f))
+					.shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp))
+			) {
+				Column(modifier = Modifier.padding(vertical = 4.dp)) {
+					// "All Families" option
+					Box(
+						modifier = Modifier
+							.fillMaxWidth()
+							.clickable {
+								onFamilySelected(null)
+								expanded = false
+							}
+							.padding(horizontal = 12.dp, vertical = 10.dp),
+						contentAlignment = Alignment.CenterStart
+					) {
+						Row(
+							modifier = Modifier.fillMaxWidth(),
+							verticalAlignment = Alignment.CenterVertically
+						) {
+							Box(
+								modifier = Modifier
+									.size(12.dp)
+									.clip(CircleShape)
+									.background(Color(0xFF2196F3))
+							)
+							Spacer(modifier = Modifier.width(8.dp))
+							Text("Semua Familyku", color = Color(0xFF1C1C1C))
+							Spacer(modifier = Modifier.weight(1f))
+							if (selectedFamilyId == null) {
+								Text("✓", color = Color(0xFF1565C0), fontWeight = FontWeight.Bold)
+							}
+						}
+					}
+
+					// Family options
+					familyOptions.forEach { option ->
+						Box(
+							modifier = Modifier
+								.fillMaxWidth()
+								.clickable {
+									onFamilySelected(option.id)
+									expanded = false
+								}
+								.padding(horizontal = 12.dp, vertical = 10.dp),
+							contentAlignment = Alignment.CenterStart
+						) {
+							Row(
+								modifier = Modifier.fillMaxWidth(),
+								verticalAlignment = Alignment.CenterVertically
+							) {
+								Box(
+									modifier = Modifier
+										.size(12.dp)
+										.clip(CircleShape)
+										.background(Color(option.color))
+								)
+								Spacer(modifier = Modifier.width(8.dp))
+								Text(option.name, color = Color(0xFF1C1C1C))
+								Spacer(modifier = Modifier.weight(1f))
+								if (option.id == selectedFamilyId) {
+									Text("✓", color = Color(0xFF1565C0), fontWeight = FontWeight.Bold)
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+@Composable
 private fun MiniMetric(
 	modifier: Modifier = Modifier,
 	value: String,
@@ -186,9 +323,9 @@ private fun MiniMetric(
 		horizontalAlignment = Alignment.CenterHorizontally,
 		verticalArrangement = Arrangement.Center
 	) {
-		Text(text = value, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+		Text(text = value, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
 		Spacer(modifier = Modifier.height(2.dp))
-		Text(text = label, color = Color(0xFF606060), style = MaterialTheme.typography.labelSmall)
+		Text(text = label, color = Color(0xFF606060), fontSize = 10.sp)
 	}
 }
 

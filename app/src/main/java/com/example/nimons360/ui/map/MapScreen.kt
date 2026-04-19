@@ -129,6 +129,7 @@ fun MapScreen(viewModel: MapViewModel) {
 	Box(modifier = Modifier.fillMaxSize()) {
 		MapLibreContent(
 			state = uiState,
+			resolveMarkerColor = viewModel::resolveMarkerColor,
 			onMemberClick = { viewModel.onMemberMarkerClicked(it) },
 			onFavoriteLongPress = { lat, lng -> viewModel.addFavoriteLocation(lat, lng) },
 			onFavoriteFocused = viewModel::consumeFocusedFavorite,
@@ -141,6 +142,8 @@ fun MapScreen(viewModel: MapViewModel) {
 			modifier = Modifier
 				.fillMaxSize()
 				.padding(horizontal = 12.dp, vertical = 10.dp),
+			familyOptions = uiState.familyOptions,
+			selectedFamilyId = uiState.selectedFamilyId,
 			searchQuery = uiState.searchQuery,
 			isConnected = uiState.isWsConnected,
 			nearbyCount = uiState.nearbyMembers.size,
@@ -148,6 +151,7 @@ fun MapScreen(viewModel: MapViewModel) {
 			favoritesCount = uiState.favoriteLocations.size,
 			isFavoritesPanelVisible = uiState.isFavoritesPanelVisible,
 			currentUser = uiState.currentUser,
+			onFamilySelected = viewModel::onFamilyFilterChanged,
 			onSearchQueryChanged = viewModel::onSearchQueryChanged,
 			onFavoritesChipClick = viewModel::toggleFavoritesPanel
 		)
@@ -249,6 +253,7 @@ private fun ObserveLocationAndOrientation(
 @Composable
 private fun MapLibreContent(
 	state: MapUiState,
+	resolveMarkerColor: (MemberMapUi) -> Int,
 	onMemberClick: (String) -> Unit,
 	onFavoriteLongPress: (Double, Double) -> Unit,
 	onFavoriteFocused: () -> Unit,
@@ -358,7 +363,7 @@ private fun MapLibreContent(
 					member = currentUser,
 					memberMarkers = memberMarkers,
 					markerMemberLookup = markerMemberLookup,
-					pinColor = Color.parseColor("#0B3D91"),
+					pinColor = resolveMarkerColor(currentUser),
 					drawArrow = true
 				)
 
@@ -374,7 +379,8 @@ private fun MapLibreContent(
 			}
 
 			val filteredRemoteMembers = state.remoteMembers.filter { member ->
-				state.searchQuery.isEmpty() || member.fullName.contains(state.searchQuery, ignoreCase = true)
+				(state.searchQuery.isEmpty() || member.fullName.contains(state.searchQuery, ignoreCase = true)) &&
+				memberMatchesSelectedFamily(member, state.selectedFamilyId)
 			}
 
 			filteredRemoteMembers.forEach { member ->
@@ -384,7 +390,7 @@ private fun MapLibreContent(
 					member = member,
 					memberMarkers = memberMarkers,
 					markerMemberLookup = markerMemberLookup,
-					pinColor = Color.parseColor("#E53935"),
+					pinColor = resolveMarkerColor(member),
 					drawArrow = false
 				)
 			}
@@ -467,6 +473,11 @@ private fun MapFloatingControls(
 			}
 		}
 	}
+}
+
+private fun memberMatchesSelectedFamily(member: MemberMapUi, selectedFamilyId: Int?): Boolean {
+	if (selectedFamilyId == null) return true
+	return selectedFamilyId in member.familyIds
 }
 
 private fun syncMemberMarker(

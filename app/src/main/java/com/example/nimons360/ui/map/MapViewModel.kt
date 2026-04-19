@@ -14,6 +14,7 @@ import com.example.nimons360.data.remote.dto.common.FavoriteLocationDto
 import com.example.nimons360.data.remote.websocket.WebSocketManager
 import com.example.nimons360.data.remote.websocket.model.MemberPresencePayload
 import com.example.nimons360.data.remote.websocket.model.UpdatePresencePayload
+import com.example.nimons360.data.repository.FamilyRepository
 import com.example.nimons360.data.repository.UserRepository
 import com.example.nimons360.utils.Result
 import com.google.gson.Gson
@@ -36,6 +37,27 @@ private const val PRESENCE_PUBLISH_INTERVAL_MS = 1_000L
 private const val PING_INTERVAL_MS = 15_000L
 private const val FAVORITE_PREF_NAME = "map_favorite_locations"
 private const val FAVORITE_PREF_KEY = "favorite_locations_json"
+private const val PROFILE_AVATAR_BLUE = 0xFF2196F3.toInt()
+
+private val userColorPalette = listOf(
+	0xFF4CAF50.toInt(),
+	0xFF2196F3.toInt(),
+	0xFFE91E63.toInt(),
+	0xFFFF9800.toInt(),
+	0xFF9C27B0.toInt(),
+	0xFF009688.toInt(),
+	0xFF795548.toInt()
+)
+
+private val familyColorPalette = listOf(
+	0xFF0B3D91.toInt(),
+	0xFF2E7D32.toInt(),
+	0xFFC62828.toInt(),
+	0xFF6A1B9A.toInt(),
+	0xFFEF6C00.toInt(),
+	0xFF00695C.toInt(),
+	0xFF455A64.toInt()
+)
 
 data class MemberMapUi(
 	val id: String,
@@ -49,13 +71,22 @@ data class MemberMapUi(
 	val isCharging: Boolean,
 	val internetStatus: String,
 	val isCurrentUser: Boolean,
+	val familyIds: Set<Int> = emptySet(),
 	val lastUpdatedAt: Long
+)
+
+data class FamilyFilterOption(
+	val id: Int?,
+	val name: String,
+	val color: Int
 )
 
 data class MapUiState(
 	val hasLocationPermission: Boolean = false,
 	val isWsConnected: Boolean = false,
 	val searchQuery: String = "",
+	val selectedFamilyId: Int? = null,
+	val familyOptions: List<FamilyFilterOption> = emptyList(),
 	val selectedMember: MemberMapUi? = null,
 	val currentUser: MemberMapUi? = null,
 	val remoteMembers: List<MemberMapUi> = emptyList(),
@@ -70,6 +101,7 @@ data class MapUiState(
 @HiltViewModel
 class MapViewModel @Inject constructor(
 	private val userRepository: UserRepository,
+	private val familyRepository: FamilyRepository,
 	private val webSocketManager: WebSocketManager,
 	@ApplicationContext private val appContext: Context
 ) : ViewModel() {
@@ -87,6 +119,8 @@ class MapViewModel @Inject constructor(
 	private var currentUserName: String = "You"
 	private var currentUserEmail: String = "you@nimons.local"
 	private var currentUserId: Int? = null
+	private var myFamilyIds: Set<Int> = emptySet()
+	private var isFamilyContextLoaded: Boolean = false
 
 	private var timeoutCleanupJob: Job? = null
 	private var periodicPublishJob: Job? = null
@@ -97,6 +131,7 @@ class MapViewModel @Inject constructor(
 
 	init {
 		loadCurrentUserProfile()
+		loadMyFamilies()
 		loadFavoriteLocations()
 		observeWebSocketEvents()
 	}
@@ -126,6 +161,11 @@ class MapViewModel @Inject constructor(
 		_uiState.update { it.copy(searchQuery = query) }
 	}
 
+	fun onFamilyFilterChanged(familyId: Int?) {
+		_uiState.update { it.copy(selectedFamilyId = familyId) }
+		recomputeNearbyMembers()
+	}
+
 	fun onCurrentLocationChanged(
 		latitude: Double,
 		longitude: Double,
@@ -142,7 +182,6 @@ class MapViewModel @Inject constructor(
 
 			if (deltaMs < 1500L && distance > 45.0) return
 
-			// smoothening
 			val alpha = when {
 				distance < 2.0 -> 0.45  
 				distance < 8.0 -> 0.75  
@@ -276,12 +315,46 @@ class MapViewModel @Inject constructor(
 	}
 
 	private fun handleIncomingPresence(payload: MemberPresencePayload) {
-		if (payload.email.equals(currentUserEmail, ignoreCase = true)) return
+		if (currentUserId != null && payload.userId == currentUserId) return
+
+		val incomingEmail = payload.extractEmail()
+		if (incomingEmail.equals(currentUserEmail, ignoreCase = true)) return
+		if (!sharesFamilyWithCurrentUser(payload)) return
 
 		val now = System.currentTimeMillis()
-		val memberId = memberIdFrom(payload.userId, payload.email)
-		remoteMemberStore[memberId] = payload.toMapUi(now)
+		val memberId = memberIdFrom(payload.userId, incomingEmail)
+		val incoming = payload.toMapUi(now)
+		val existing = remoteMemberStore[memberId]
+		remoteMemberStore[memberId] = if (existing == null) {
+			incoming
+		} else {
+			val distance = distanceMeters(existing.latitude, existing.longitude, incoming.latitude, incoming.longitude)
+			val alpha = when {
+				distance < 2.0 -> 0.35
+				distance < 10.0 -> 0.65
+				else -> 1.0
+			}
+			incoming.copy(
+				latitude = existing.latitude + (incoming.latitude - existing.latitude) * alpha,
+				longitude = existing.longitude + (incoming.longitude - existing.longitude) * alpha,
+				rotation = smoothRotation(existing.rotation, incoming.rotation, alpha.toFloat()),
+				lastUpdatedAt = now
+			)
+		}
 		publishRemoteMembersState()
+	}
+
+	private fun sharesFamilyWithCurrentUser(payload: MemberPresencePayload): Boolean {
+		if (!isFamilyContextLoaded) return true
+		if (myFamilyIds.isEmpty()) return true
+
+		val peerFamilyIds = payload.extractFamilyIdsFromMetadata()
+		if (peerFamilyIds.isEmpty()) {
+			// Server contract already scopes broadcast by family, so missing metadata should not block rendering.
+			return true
+		}
+
+		return peerFamilyIds.any { it in myFamilyIds }
 	}
 
 	private fun startMemberTimeoutCleanup() {
@@ -344,10 +417,51 @@ class MapViewModel @Inject constructor(
 				metadata = mapOf(
 					"email" to currentUserEmail,
 					"userId" to (currentUserId?.toString() ?: ""),
+					"familyIds" to myFamilyIds.sorted(),
+					"familyCount" to myFamilyIds.size,
 					"source" to "android"
 				)
 			)
 		)
+	}
+
+	private fun loadMyFamilies() {
+		viewModelScope.launch {
+			when (val result = familyRepository.getMyFamilies()) {
+				is Result.Success -> {
+					val families = result.data.orEmpty().mapNotNull { family ->
+						val familyId = family.id ?: return@mapNotNull null
+						FamilyFilterOption(
+							id = familyId,
+							name = family.name.orEmpty().ifBlank { "Family $familyId" },
+							color = familyColorFor(familyId)
+						)
+					}
+					myFamilyIds = families.mapNotNull { it.id }.toSet()
+					val selectedFamilyId = _uiState.value.selectedFamilyId
+					val retainedSelection = if (selectedFamilyId != null && selectedFamilyId !in myFamilyIds) null else selectedFamilyId
+					_uiState.update {
+						it.copy(
+							familyOptions = listOf(FamilyFilterOption(null, "Semua Familyku", PROFILE_AVATAR_BLUE)) + families,
+							selectedFamilyId = retainedSelection
+						)
+					}
+					isFamilyContextLoaded = true
+					recomputeNearbyMembers()
+				}
+				is Result.Error -> {
+					// Keep fallback mode when family lookup fails: rely on server-side family broadcast scope.
+					isFamilyContextLoaded = false
+					_uiState.update {
+						it.copy(
+							familyOptions = listOf(FamilyFilterOption(null, "Semua Familyku", PROFILE_AVATAR_BLUE)),
+							selectedFamilyId = null
+						)
+					}
+				}
+				Result.Loading -> Unit
+			}
+		}
 	}
 
 	private fun updateCurrentUserMarker() {
@@ -368,6 +482,7 @@ class MapViewModel @Inject constructor(
 			isCharging = isCharging,
 			internetStatus = networkStatus,
 			isCurrentUser = true,
+			familyIds = myFamilyIds,
 			lastUpdatedAt = System.currentTimeMillis()
 		)
 		_uiState.update { it.copy(currentUser = current) }
@@ -385,12 +500,18 @@ class MapViewModel @Inject constructor(
 		val state = _uiState.value
 		val current = state.currentUser ?: return
 		val nearby = state.remoteMembers
+			.filter { member -> memberMatchesSelectedFamily(member, state.selectedFamilyId) }
 			.map { member -> member to distanceMeters(current.latitude, current.longitude, member.latitude, member.longitude) }
 			.filter { (_, distance) -> distance <= state.nearbyRadiusMeters }
 			.sortedBy { (_, distance) -> distance }
 			.map { (member, _) -> member }
 
 		_uiState.update { it.copy(nearbyMembers = nearby) }
+	}
+
+	private fun memberMatchesSelectedFamily(member: MemberMapUi, selectedFamilyId: Int?): Boolean {
+		if (selectedFamilyId == null) return true
+		return selectedFamilyId in member.familyIds
 	}
 
 	private fun distanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
@@ -460,6 +581,34 @@ class MapViewModel @Inject constructor(
 		return "${userId ?: -1}:$safeEmail"
 	}
 
+	private fun MemberPresencePayload.extractEmail(): String {
+		if (email.isNotBlank()) return email
+		return (metadata["email"] as? String).orEmpty()
+	}
+
+	private fun MemberPresencePayload.extractFamilyIdsFromMetadata(): Set<Int> {
+		val idsFromList = (metadata["familyIds"] as? List<*>)
+			.orEmpty()
+			.mapNotNull { item ->
+				when (item) {
+					is Number -> item.toInt()
+					is String -> item.toIntOrNull()
+					else -> null
+				}
+			}
+			.filter { it > 0 }
+			.toSet()
+
+		if (idsFromList.isNotEmpty()) return idsFromList
+
+		val single = when (val familyId = metadata["familyId"]) {
+			is Number -> familyId.toInt()
+			is String -> familyId.toIntOrNull()
+			else -> null
+		}
+		return if (single != null && single > 0) setOf(single) else emptySet()
+	}
+
 	private fun MemberPresencePayload.toMapUi(now: Long): MemberMapUi {
 		val safeEmail = email.ifBlank {
 			(metadata["email"] as? String).orEmpty()
@@ -477,14 +626,41 @@ class MapViewModel @Inject constructor(
 			isCharging = isCharging,
 			internetStatus = internetStatus.ifBlank { "mobile" },
 			isCurrentUser = false,
+			familyIds = extractFamilyIdsFromMetadata(),
 			lastUpdatedAt = now
 		)
+	}
+
+	private fun familyColorFor(familyId: Int): Int {
+		val index = kotlin.math.abs(familyId) % familyColorPalette.size
+		return familyColorPalette[index]
+	}
+
+	private fun userColorFor(member: MemberMapUi): Int {
+		val key = member.email.ifBlank { member.id }
+		val hash = kotlin.math.abs(key.hashCode())
+		return userColorPalette[hash % userColorPalette.size]
+	}
+
+	fun resolveMarkerColor(member: MemberMapUi): Int {
+		val state = _uiState.value
+		val selectedFamilyId = state.selectedFamilyId
+		return when {
+			selectedFamilyId != null -> state.familyOptions.firstOrNull { it.id == selectedFamilyId }?.color ?: PROFILE_AVATAR_BLUE
+			member.isCurrentUser -> PROFILE_AVATAR_BLUE
+			else -> userColorFor(member)
+		}
 	}
 
 	private fun normalizeRotation(value: Float): Float {
 		var result = value % 360f
 		if (result < 0f) result += 360f
 		return result
+	}
+
+	private fun smoothRotation(previous: Float, target: Float, alpha: Float): Float {
+		val shortestDelta = (((target - previous + 540f) % 360f) - 180f)
+		return normalizeRotation(previous + shortestDelta * alpha)
 	}
 
 	override fun onCleared() {
