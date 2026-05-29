@@ -196,6 +196,97 @@ components:
         message:
           type: string
 
+    # WebSocket Message Schemas
+    PingMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [ping]
+        payload:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+
+    PongMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [pong]
+        payload:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+
+    PresenceMetadata:
+      type: object
+      properties:
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdatePresencePayload:
+      type: object
+      required: [name, latitude, longitude, rotation, batteryLevel, isCharging, internetStatus]
+      properties:
+        name:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        rotation:
+          type: number
+          format: double
+          description: Rotation in degrees (0-360)
+        batteryLevel:
+          type: integer
+          format: int32
+          description: Battery level percentage (0-100)
+        isCharging:
+          type: boolean
+        internetStatus:
+          type: string
+          enum: [wifi, mobile]
+        metadata:
+          type: object
+          additionalProperties: true
+
+    MemberPresenceUpdatedPayload:
+      type: object
+      properties:
+        userId:
+          type: integer
+        email:
+          type: string
+        fullName:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        rotation:
+          type: number
+          format: double
+        batteryLevel:
+          type: integer
+          format: int32
+        isCharging:
+          type: boolean
+        internetStatus:
+          type: string
+          enum: [wifi, mobile]
+        metadata:
+          type: object
+          additionalProperties: true
+
 paths:
   /api/login:
     post:
