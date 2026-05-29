@@ -35,6 +35,7 @@ import com.google.gson.annotations.SerializedName
  * @param isCharging 
  * @param internetStatus 
  * @param metadata 
+ * @param profileImageUrl 
  */
 
 
@@ -68,7 +69,10 @@ data class MemberPresenceUpdatedPayload (
     val internetStatus: MemberPresenceUpdatedPayload.InternetStatus? = null,
 
     @SerializedName("metadata")
-    val metadata: kotlin.collections.Map<kotlin.String, kotlin.Any>? = null
+    val metadata: kotlin.collections.Map<kotlin.String, kotlin.Any>? = null,
+
+    @SerializedName("profileImageUrl")
+    val profileImageUrl: kotlin.String? = null
 
 ) {
 

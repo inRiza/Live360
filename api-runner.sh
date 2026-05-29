@@ -19,6 +19,7 @@ mkdir -p "$BASE_PATH/common"
 
 rm -rf tmp_gen
 # Added --type-mappings=URI=String to prevent URI mismatch errors
+# Added --request旜dy-for-multipart for multipart form data support
 java -jar "$GENERATOR_JAR" generate \
     -i "$SPEC" \
     -g kotlin \

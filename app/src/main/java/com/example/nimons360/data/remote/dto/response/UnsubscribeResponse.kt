@@ -13,7 +13,7 @@
     "UnusedImport"
 )
 
-package com.example.nimons360.data.remote.dto.common
+package com.example.nimons360.data.remote.dto.response
 
 import com.example.nimons360.data.remote.dto.request.*
 import com.example.nimons360.data.remote.dto.response.*
@@ -25,22 +25,14 @@ import com.google.gson.annotations.SerializedName
 /**
  * 
  *
- * @param fullName 
- * @param email 
- * @param profileImageUrl 
+ * @param unsubscribed 
  */
 
 
-data class MemberCensored (
+data class UnsubscribeResponse (
 
-    @SerializedName("fullName")
-    val fullName: kotlin.String? = null,
-
-    @SerializedName("email")
-    val email: kotlin.String? = null,
-
-    @SerializedName("profileImageUrl")
-    val profileImageUrl: kotlin.String? = null
+    @SerializedName("unsubscribed")
+    val unsubscribed: kotlin.Boolean? = null
 
 )
 

@@ -29,6 +29,7 @@ import com.google.gson.annotations.SerializedName
  * @param fullName 
  * @param email 
  * @param joinedAt 
+ * @param profileImageUrl 
  */
 
 
@@ -44,7 +45,10 @@ data class MemberDetail (
     val email: kotlin.String? = null,
 
     @SerializedName("joinedAt")
-    val joinedAt: kotlin.String? = null
+    val joinedAt: kotlin.String? = null,
+
+    @SerializedName("profileImageUrl")
+    val profileImageUrl: kotlin.String? = null
 
 )
 

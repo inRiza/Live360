@@ -35,6 +35,8 @@ components:
           type: string
         fullName:
           type: string
+        profileImageUrl:
+          type: string
 
     LoginData:
       type: object
@@ -80,6 +82,8 @@ components:
           type: string
         email:
           type: string
+        profileImageUrl:
+          type: string
 
     MemberDetail:
       type: object
@@ -91,6 +95,8 @@ components:
         email:
           type: string
         joinedAt:
+          type: string
+        profileImageUrl:
           type: string
 
     FamilyDiscover:
@@ -190,6 +196,57 @@ components:
         left:
           type: boolean
 
+    SubscribeRequest:
+      type: object
+      required: [fcmToken]
+      properties:
+        fcmToken:
+          type: string
+
+    SubscribeResponse:
+      type: object
+      properties:
+        subscribed:
+          type: boolean
+
+    UnsubscribeResponse:
+      type: object
+      properties:
+        unsubscribed:
+          type: boolean
+
+    SendFamilyNotificationRequest:
+      type: object
+      required: [familyId, message]
+      properties:
+        familyId:
+          type: integer
+        message:
+          type: string
+
+    SendFamilyNotificationResponse:
+      type: object
+      properties:
+        sent:
+          type: boolean
+
+    SendGreetingRequest:
+      type: object
+      required: [familyId, targetUserId, message]
+      properties:
+        familyId:
+          type: integer
+        targetUserId:
+          type: integer
+        message:
+          type: string
+
+    SendGreetingResponse:
+      type: object
+      properties:
+        delivered:
+          type: boolean
+
     ErrorResponse:
       type: object
       properties:
@@ -286,6 +343,8 @@ components:
         metadata:
           type: object
           additionalProperties: true
+        profileImageUrl:
+          type: string
 
 paths:
   /api/login:
@@ -347,6 +406,120 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/UserProfile'
+
+  /api/me/photo:
+    post:
+      summary: Upload profile photo
+      tags: [User]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
+                  description: Image file (PNG or JPEG, max 500 KB)
+      responses:
+        '200':
+          description: photo uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+
+  /api/notifications/subscribe:
+    post:
+      summary: Subscribe device token for push notifications
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+      responses:
+        '200':
+          description: subscribed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SubscribeResponse'
+
+  /api/notifications/unsubscribe:
+    post:
+      summary: Unsubscribe device token from push notifications
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: unsubscribed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UnsubscribeResponse'
+
+  /api/notifications/send:
+    post:
+      summary: Send family notification (broadcast)
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendFamilyNotificationRequest'
+      responses:
+        '200':
+          description: notification sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SendFamilyNotificationResponse'
+
+  /api/notifications/greeting:
+    post:
+      summary: Send greeting to family member
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendGreetingRequest'
+      responses:
+        '200':
+          description: greeting sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SendGreetingResponse'
 
   /api/families:
     get:
