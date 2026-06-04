@@ -25,30 +25,32 @@ import com.google.gson.annotations.SerializedName
 /**
  * 
  *
- * @param id 
- * @param fullName 
- * @param email 
- * @param joinedAt 
- * @param profileImageUrl 
+ * @param type 
+ * @param payload 
+ * @param timestamp 
  */
 
 
-data class MemberDetail (
+data class PingMessage (
 
-    @SerializedName("id")
-    val id: kotlin.Int? = null,
+    @SerializedName("type")
+    val type: PingMessage.Type? = null,
 
-    @SerializedName("fullName")
-    val fullName: kotlin.String? = null,
+    @SerializedName("payload")
+    val payload: kotlin.Any? = null,
 
-    @SerializedName("email")
-    val email: kotlin.String? = null,
+    @SerializedName("timestamp")
+    val timestamp: java.time.OffsetDateTime? = null
 
-    @SerializedName("joinedAt")
-    val joinedAt: kotlin.String? = null,
+) {
 
-    @SerializedName("profileImageUrl")
-    val profileImageUrl: kotlin.String? = null
-
-)
+    /**
+     * 
+     *
+     * Values: PING
+     */
+    enum class Type(val value: kotlin.String) {
+        @SerializedName(value = "ping") PING("ping");
+    }
+}
 

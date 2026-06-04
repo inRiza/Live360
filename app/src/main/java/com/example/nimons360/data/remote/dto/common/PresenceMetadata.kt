@@ -25,30 +25,14 @@ import com.google.gson.annotations.SerializedName
 /**
  * 
  *
- * @param id 
- * @param fullName 
- * @param email 
- * @param joinedAt 
- * @param profileImageUrl 
+ * @param metadata 
  */
 
 
-data class MemberDetail (
+data class PresenceMetadata (
 
-    @SerializedName("id")
-    val id: kotlin.Int? = null,
-
-    @SerializedName("fullName")
-    val fullName: kotlin.String? = null,
-
-    @SerializedName("email")
-    val email: kotlin.String? = null,
-
-    @SerializedName("joinedAt")
-    val joinedAt: kotlin.String? = null,
-
-    @SerializedName("profileImageUrl")
-    val profileImageUrl: kotlin.String? = null
+    @SerializedName("metadata")
+    val metadata: kotlin.collections.Map<kotlin.String, kotlin.Any>? = null
 
 )
 
