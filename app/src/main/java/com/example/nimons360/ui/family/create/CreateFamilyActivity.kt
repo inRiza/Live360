@@ -1,6 +1,7 @@
 package com.example.nimons360.ui.family.create
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.ImageView
 import android.widget.TextView
@@ -39,15 +40,20 @@ class CreateFamilyActivity : AppCompatActivity() {
         etFamilyName = findViewById(R.id.etFamilyName)
         tvCreate = findViewById(R.id.tvCreate)
 
+        // Dynamic Span Count by Orientation
+        val orientation = resources.configuration.orientation
+        val spanCount = if (orientation == Configuration.ORIENTATION_LANDSCAPE) 3 else 4
+
         // Setup RecyclerView
         val adapter = IconPickerAdapter(
             icons = viewModel.availableIcons,
+            initialSelectedIconId = viewModel.selectedIcon.value, // responsive
             onIconSelected = { selectedIconId ->
                 viewModel.setSelectedIcon(selectedIconId)
             }
         )
         rvIcons.adapter = adapter
-        rvIcons.layoutManager = GridLayoutManager(this, 4)
+        rvIcons.layoutManager = GridLayoutManager(this, spanCount)
 
         // Setup Listener Tombol
         tvCancel.setOnClickListener {
