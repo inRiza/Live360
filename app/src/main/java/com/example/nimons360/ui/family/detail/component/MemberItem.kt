@@ -3,6 +3,7 @@ package com.example.nimons360.ui.family.detail.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
@@ -17,7 +18,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.nimons360.ui.theme.Orange50
 import com.example.nimons360.ui.theme.Orange800
+import com.example.nimons360.ui.theme.Blue600
 import com.example.nimons360.ui.theme.Nimons360Theme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.Send
 
 @Composable
 fun MemberItem(
@@ -26,7 +31,9 @@ fun MemberItem(
     initial: String,
     avatarColor: Color,
     isBlurred: Boolean = false,
-    isYou: Boolean = false
+    isYou: Boolean = false,
+    showGreet: Boolean = false,
+    onGreet: () -> Unit = {}
 ) {
     // Blurring State
     val rowModifier = Modifier
@@ -79,6 +86,20 @@ fun MemberItem(
                     color = Orange800,
                     fontSize = 10.sp,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                )
+            }
+        }
+
+        if (showGreet) {
+            IconButton(
+                onClick = onGreet,
+                modifier = Modifier.size(36.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Send,
+                    contentDescription = "Greet",
+                    tint = Blue600,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

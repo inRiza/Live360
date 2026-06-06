@@ -40,11 +40,14 @@ import com.example.nimons360.ui.theme.Red600
 import com.example.nimons360.ui.theme.White
 import com.example.nimons360.utils.Result
 
+
 @Composable
 fun FamilyDetailScreen(
     viewModel: FamilyDetailViewModel,
     familyId: Int,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSendMessage: (familyId: Int, familyName: String) -> Unit = { _, _ ->},
+    onSendGreeting: (familyId: Int, targetUserId: Int, targetName: String) -> Unit = { _, _, _ ->}
 ) {
     // State Data
     val detailState by viewModel.familyDetailState.collectAsState()
@@ -243,6 +246,7 @@ fun FamilyDetailContent(
                     items(members.withIndex().toList()) { (index, member) ->
                         val name = member.fullName ?: "Unknown"
                         val email = member.email ?: "**********"
+                        val memberId = member.id
 
                         MemberItem(
                             name = name,

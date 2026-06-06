@@ -35,4 +35,16 @@ interface ApiService {
 
     @POST("api/families/leave")
     suspend fun leaveFamily(@Body request: LeaveFamilyRequest): Response<ApiFamiliesLeavePost200Response>
+
+    @POST("api/notifications/subscribe")
+    suspend fun subscribeToken(@Body request: SubscribeRequest): Response<ApiNotificationsSubscribePost200Response>
+
+    @POST("api/notifications/unsubscribe")
+    suspend fun unsubscribeToken(): Response<ApiNotificationsUnsubscribePost200Response>
+
+    @POST("api/notifications/send")
+    suspend fun sendNotification(@Body request: SendFamilyNotificationRequest): Response<ApiNotificationsSendPost200Response>
+
+    @POST("api/notifications/greeting")
+    suspend fun sendGreetingNotification(@Body request: SendGreetingRequest): Response<ApiNotificationsGreetingPost200Response>
 }
