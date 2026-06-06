@@ -74,7 +74,15 @@ class PinDownloadService : Service() {
         }
 
         val notification = buildProgressNotification(pinName, 0)
-        startForeground(NOTIFICATION_ID, notification)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
 
         // Start download in coroutine
         serviceScope.launch {

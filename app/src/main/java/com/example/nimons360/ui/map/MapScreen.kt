@@ -114,11 +114,11 @@ fun MapScreen(viewModel: MapViewModel) {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_START -> {
+                Lifecycle.Event.ON_RESUME -> {
                     viewModel.reloadCustomPins()
                     viewModel.startRealtime()
                 }
-                Lifecycle.Event.ON_STOP -> viewModel.stopRealtime()
+                Lifecycle.Event.ON_PAUSE -> viewModel.stopRealtime()
                 else -> Unit
             }
         }
