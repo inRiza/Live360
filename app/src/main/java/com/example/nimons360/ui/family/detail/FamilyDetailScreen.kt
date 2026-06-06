@@ -99,7 +99,20 @@ fun FamilyDetailScreen(
             currentUserEmail = currentUserEmail,
             onBack = onBack,
             onJoinFamily = { code -> viewModel.joinFamily(code) },
-            onLeaveFamily = { viewModel.leaveFamily() }
+            onLeaveFamily = { viewModel.leaveFamily() },
+            onShareFamilyLink = {
+                // Android Share Sheet
+                val shareMessage = "Ayo bergabung dengan keluarga ${family.name} di Nimons360!\nKlik link berikut untuk bergabung:\n\nnimons360://family/${family.id}?code=${family.familyCode}"
+
+                val sendIntent: Intent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(Intent.EXTRA_TEXT, shareMessage)
+                    type = "text/plain"
+                }
+
+                val shareIntent = Intent.createChooser(sendIntent, "Share Family Link")
+                context.startActivity(shareIntent)
+            }
         )
     }
 }
