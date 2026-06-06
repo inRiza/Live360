@@ -88,6 +88,7 @@ fun MapScreen(viewModel: MapViewModel) {
     LaunchedEffect(uiState.errorMessage) {
         val message = uiState.errorMessage ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(message)
+        viewModel.clearErrorMessage()
     }
 
     DisposableEffect(lifecycleOwner) {

@@ -573,6 +573,10 @@ class MapViewModel @Inject constructor(
         }
     }
 
+    fun clearErrorMessage() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
     private fun observeWebSocketEvents() {
         viewModelScope.launch {
             webSocketManager.events.collect { event ->
@@ -589,7 +593,14 @@ class MapViewModel @Inject constructor(
                         }
                     }
                     is WebSocketManager.Event.Error -> {
-                        _uiState.update { it.copy(errorMessage = event.message) }
+                        val isNoisyError = event.message.contains("WebSocket not connected", ignoreCase = true) ||
+                                event.message.contains("Failed to send presence", ignoreCase = true) ||
+                                event.message.contains("connection_failure", ignoreCase = true) ||
+                                event.message.contains("WebSocket failure", ignoreCase = true) ||
+                                event.message.contains("Failed to connect to", ignoreCase = true)
+                        if (!isNoisyError) {
+                            _uiState.update { it.copy(errorMessage = event.message) }
+                        }
                     }
                     is WebSocketManager.Event.PresenceReceived -> {
                         handleIncomingPresence(event.payload)
@@ -681,6 +692,7 @@ class MapViewModel @Inject constructor(
     }
 
     private fun publishCurrentPresence() {
+        if (!_uiState.value.isWsConnected) return
         val lat = currentLatitude ?: return
         val lng = currentLongitude ?: return
         val networkStatus = readNetworkStatus()

@@ -52,12 +52,13 @@ fun MarkedLocationBottomSheet(
     var latText by remember(state.latitude) { mutableStateOf(String.format(Locale.US, "%.6f", state.latitude)) }
     var lngText by remember(state.longitude) { mutableStateOf(String.format(Locale.US, "%.6f", state.longitude)) }
 
-    // Camera: prepare temp file URI
+    // Camera: prepare temp file URI + absolute path
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
+    var cameraImageAbsolutePath by remember { mutableStateOf<String?>(null) }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success) {
-            cameraImageUri?.path?.let { path ->
+            cameraImageAbsolutePath?.let { path ->
                 viewModel.addNewPhotosToAddEdit(listOf(path))
             }
         }
@@ -70,8 +71,9 @@ fun MarkedLocationBottomSheet(
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
-            val uri = createTempImageUri(context)
+            val (uri, absPath) = createTempImageFile(context)
             cameraImageUri = uri
+            cameraImageAbsolutePath = absPath
             cameraLauncher.launch(uri)
         }
     }
@@ -262,8 +264,9 @@ fun MarkedLocationBottomSheet(
                     onClick = {
                         val hasCam = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
                         if (hasCam) {
-                            val uri = createTempImageUri(context)
+                            val (uri, absPath) = createTempImageFile(context)
                             cameraImageUri = uri
+                            cameraImageAbsolutePath = absPath
                             cameraLauncher.launch(uri)
                         } else {
                             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
@@ -307,11 +310,13 @@ fun MarkedLocationBottomSheet(
     }
 }
 
-private fun createTempImageUri(context: Context): Uri {
+/** Returns Pair(contentUri, absoluteFilePath) for camera capture */
+private fun createTempImageFile(context: Context): Pair<Uri, String> {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
     val dir = File(context.cacheDir, "camera_photos").apply { mkdirs() }
     val file = File(dir, "IMG_${timeStamp}.jpg")
-    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    return Pair(uri, file.absolutePath)
 }
 
 private fun copyUriToTemp(context: Context, uri: Uri): String? {

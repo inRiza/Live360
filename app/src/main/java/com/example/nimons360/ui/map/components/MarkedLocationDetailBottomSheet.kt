@@ -2,13 +2,20 @@ package com.example.nimons360.ui.map.components
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.nimons360.data.local.db.dao.MarkedLocationWithPhotos
 import com.example.nimons360.ui.map.MapViewModel
@@ -32,7 +41,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MarkedLocationDetailBottomSheet(
     item: MarkedLocationWithPhotos,
@@ -41,6 +50,7 @@ fun MarkedLocationDetailBottomSheet(
 ) {
     val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var selectedPhotoIndex by remember { mutableStateOf<Int?>( null) }
     val location = item.location
     val photos = item.photos
 
@@ -186,7 +196,8 @@ fun MarkedLocationDetailBottomSheet(
                 )
                 Spacer(Modifier.height(8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(photos) { photo ->
+                    items(photos.indices.toList()) { idx ->
+                        val photo = photos[idx]
                         AsyncImage(
                             model = File(photo.filePath),
                             contentDescription = "Foto lokasi",
@@ -195,6 +206,7 @@ fun MarkedLocationDetailBottomSheet(
                                 .size(110.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(10.dp))
+                                .clickable { selectedPhotoIndex = idx }
                         )
                     }
                 }
@@ -236,6 +248,107 @@ fun MarkedLocationDetailBottomSheet(
 
             TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                 Text("Tutup", color = Color(0xFF757575))
+            }
+        }
+    }
+
+    // Photo fullscreen viewer
+    selectedPhotoIndex?.let { startIdx ->
+        PhotoViewerDialog(
+            photos = photos.map { it.filePath },
+            initialIndex = startIdx,
+            onDismiss = { selectedPhotoIndex = null }
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PhotoViewerDialog(
+    photos: List<String>,
+    initialIndex: Int,
+    onDismiss: () -> Unit
+) {
+    val pagerState = rememberPagerState(initialPage = initialIndex) { photos.size }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.95f))
+        ) {
+            // Pager with horizontal swipe
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                pageSpacing = 8.dp
+            ) { page ->
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = File(photos[page]),
+                        contentDescription = "Foto ${page + 1}",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+
+            // Close button (top right)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .statusBarsPadding()
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color.Black.copy(alpha = 0.55f),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable { onDismiss() }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Tutup",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            // Page indicator (bottom center)
+            if (photos.size > 1) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 32.dp)
+                        .navigationBarsPadding()
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.Black.copy(alpha = 0.55f)
+                    ) {
+                        Text(
+                            text = "${pagerState.currentPage + 1} / ${photos.size}",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                        )
+                    }
+                }
             }
         }
     }
