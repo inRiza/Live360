@@ -9,6 +9,9 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -16,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.nimons360.R
 import com.example.nimons360.ui.auth.login.LoginActivity
+import com.example.nimons360.ui.profile.components.CustomizePinSection
 import com.example.nimons360.ui.profile.components.EditNameBottomSheet
 import com.google.android.material.snackbar.Snackbar
 import androidx.navigation.fragment.findNavController
@@ -34,8 +38,19 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         val tvName = view.findViewById<TextView>(R.id.tv_name)
         val tvEmail = view.findViewById<TextView>(R.id.tv_email)
         val btnSignOut = view.findViewById<TextView>(R.id.btn_sign_out)
-        val btnCustomizePin = view.findViewById<TextView>(R.id.btn_customize_pin)
         val btnEdit = view.findViewById<ImageButton>(R.id.btn_edit)
+        val composeCustomizePinSection = view.findViewById<ComposeView>(R.id.compose_customize_pin_section)
+
+        composeCustomizePinSection.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                MaterialTheme {
+                    CustomizePinSection(
+                        onClick = { findNavController().navigate(R.id.customizePinFragment) }
+                    )
+                }
+            }
+        }
 
         btnEdit.setOnClickListener {
             val existing = childFragmentManager.findFragmentByTag("EditNameBottomSheet")
@@ -44,10 +59,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                     viewModel.updateProfile(newName)
                 }.show(childFragmentManager, "EditNameBottomSheet")
             }
-        }
-
-        btnCustomizePin.setOnClickListener {
-            findNavController().navigate(R.id.customizePinFragment)
         }
 
         btnSignOut.setOnClickListener {

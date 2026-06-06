@@ -74,26 +74,12 @@
             android:layout_height="1dp"
             android:background="@color/grey" />
 
-        <LinearLayout
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/compose_customize_pin_section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingStart="16dp"
             android:paddingTop="24dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="0dp">
-
-            <TextView
-                android:id="@+id/btn_customize_pin"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/profile_bg_customize_pin"
-                android:gravity="center"
-                android:text="Customize Pin"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-        </LinearLayout>
+            android:paddingBottom="0dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
