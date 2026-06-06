@@ -3,6 +3,7 @@ package com.example.nimons360.ui.family.detail.component
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -15,8 +16,7 @@ fun JoinFamilyDialog(
     onDismiss: () -> Unit,
     onJoin: (String) -> Unit
 ) {
-    // State Input
-    var codeInput by remember { mutableStateOf("") }
+    var codeInput by rememberSaveable { mutableStateOf("") } // responsive
 
     // Dialog Konfirmasi
     AlertDialog(
