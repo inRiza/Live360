@@ -1,12 +1,16 @@
+@file:Suppress("DEPRECATION", "SpellCheckingInspection")
 package com.example.nimons360.ui.map
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -31,10 +35,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.scale
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.withRotation
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.example.nimons360.data.local.db.dao.MarkedLocationWithPhotos
@@ -67,8 +75,8 @@ fun MapScreen(viewModel: MapViewModel) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var recenterRequestId by remember { mutableStateOf(0) }
-    var resetNorthRequestId by remember { mutableStateOf(0) }
+    var recenterRequestId by remember { mutableIntStateOf(0) }
+    var resetNorthRequestId by remember { mutableIntStateOf(0) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -214,6 +222,7 @@ fun MapScreen(viewModel: MapViewModel) {
     }
 }
 
+@SuppressLint("MissingPermission")
 @Composable
 private fun ObserveLocationAndOrientation(
     hasLocationPermission: Boolean,
@@ -322,11 +331,11 @@ private fun MapLibreContent(
     val favoriteMarkers = remember { linkedMapOf<String, org.maplibre.android.annotations.Marker>() }
     val markedMarkers = remember { linkedMapOf<String, org.maplibre.android.annotations.Marker>() }
     val tempLongPressMarkerRef = remember { mutableStateOf<org.maplibre.android.annotations.Marker?>(null) }
-    var handledRecenterRequestId by remember { mutableStateOf(0) }
-    var handledResetNorthRequestId by remember { mutableStateOf(0) }
+    var handledRecenterRequestId by remember { mutableIntStateOf(0) }
+    var handledResetNorthRequestId by remember { mutableIntStateOf(0) }
 
     // Double tap detection
-    var lastTapMs by remember { mutableStateOf(0L) }
+    var lastTapMs by remember { mutableLongStateOf(0L) }
 
     DisposableEffect(mapView, lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -700,17 +709,17 @@ private fun createMemberBitmap(
     if (customPinBiasaPath != null) {
         val file = File(customPinBiasaPath)
         if (file.exists()) {
-            val raw = android.graphics.BitmapFactory.decodeFile(customPinBiasaPath)
+            val raw = BitmapFactory.decodeFile(customPinBiasaPath)
             if (raw != null) {
                 val baseDp = if (drawArrow) 46 else 38
                 val size = (baseDp * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(baseDp)
-                return Bitmap.createScaledBitmap(raw, size, size, true)
+                return raw.scale(size, size, true)
             }
         }
     }
     val baseDp = if (drawArrow) 52 else 42
     val size = (baseDp * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(baseDp)
-    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
@@ -721,17 +730,16 @@ private fun createMemberBitmap(
     canvas.drawCircle(size / 2f, size / 2f, size * 0.27f, paint)
 
     if (drawArrow) {
-        canvas.save()
-        canvas.rotate(rotation, size / 2f, size / 2f)
-        paint.color = color
-        val path = android.graphics.Path().apply {
-            moveTo(size / 2f, size * 0.02f)
-            lineTo(size / 2f - size * 0.15f, size * 0.30f)
-            lineTo(size / 2f + size * 0.15f, size * 0.30f)
-            close()
+        canvas.withRotation(rotation, size / 2f, size / 2f) {
+            paint.color = color
+            val path = Path().apply {
+                moveTo(size / 2f, size * 0.02f)
+                lineTo(size / 2f - size * 0.15f, size * 0.30f)
+                lineTo(size / 2f + size * 0.15f, size * 0.30f)
+                close()
+            }
+            drawPath(path, paint)
         }
-        canvas.drawPath(path, paint)
-        canvas.restore()
     }
 
     paint.color = Color.WHITE
@@ -748,20 +756,20 @@ private fun createFavoriteBitmap(context: Context, customPinFavoritePath: String
     if (customPinFavoritePath != null) {
         val file = File(customPinFavoritePath)
         if (file.exists()) {
-            val raw = android.graphics.BitmapFactory.decodeFile(customPinFavoritePath)
+            val raw = BitmapFactory.decodeFile(customPinFavoritePath)
             if (raw != null) {
                 val baseDp = 34
                 val size = (baseDp * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(baseDp)
-                return Bitmap.createScaledBitmap(raw, size, size, true)
+                return raw.scale(size, size, true)
             }
         }
     }
     val size = (34 * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(34)
-    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    paint.color = Color.parseColor("#B00020")
+    paint.color = "#B00020".toColorInt()
     paint.textAlign = Paint.Align.CENTER
     paint.textSize = size * 0.88f
     paint.isFakeBoldText = true
@@ -774,11 +782,11 @@ private fun createFavoriteBitmap(context: Context, customPinFavoritePath: String
 private fun createMarkedLocationBitmap(context: Context): Bitmap {
     val dp = 40
     val size = (dp * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(dp)
-    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    val pinColor = Color.parseColor("#00796B") // teal
+    val pinColor = "#00796B".toColorInt() // teal
 
     // Circle body
     paint.color = Color.WHITE
@@ -788,7 +796,7 @@ private fun createMarkedLocationBitmap(context: Context): Bitmap {
 
     // Pin triangle tail
     paint.color = pinColor
-    val path = android.graphics.Path().apply {
+    val path = Path().apply {
         moveTo(size * 0.38f, size * 0.62f)
         lineTo(size * 0.62f, size * 0.62f)
         lineTo(size / 2f, size * 0.96f)
