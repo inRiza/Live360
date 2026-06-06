@@ -184,7 +184,7 @@ fun FamilyDetailContent(
                     // Kolom Kiri: Informasi, Kode, & Manajemen Aksi
                     Column(
                         modifier = Modifier
-                            .weight(1.1f)
+                            .weight(1.2f)
                             .fillMaxHeight()
                             .verticalScroll(rememberScrollState())
                             .padding(end = 10.dp)
@@ -300,7 +300,7 @@ fun FamilyDetailContent(
                     // Kolom Kanan: Judul Members dan Scrollable List Anggota
                     Column(
                         modifier = Modifier
-                            .weight(0.9f)
+                            .weight(0.8f)
                             .fillMaxHeight()
                             .padding(start = 10.dp)
                     ) {
