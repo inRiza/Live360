@@ -97,6 +97,12 @@ data class AddEditMarkedLocationState(
     val newPhotoPaths: List<String> = emptyList()        // newly picked/captured photos
 )
 
+data class MapLongPressState(
+    val latitude: Double,
+    val longitude: Double,
+    val address: String = "Memuat alamat..."
+)
+
 data class MapUiState(
     val hasLocationPermission: Boolean = false,
     val isWsConnected: Boolean = false,
@@ -115,6 +121,7 @@ data class MapUiState(
     val markedLocations: List<MarkedLocationWithPhotos> = emptyList(),
     val addEditMarkedLocation: AddEditMarkedLocationState? = null,  // non-null = show sheet
     val selectedMarkedLocation: MarkedLocationWithPhotos? = null,   // non-null = show detail
+    val mapLongPressState: MapLongPressState? = null,                // non-null = show map options sheet
     val customPinBiasaPath: String? = null,
     val customPinFavoritePath: String? = null,
     val errorMessage: String? = null
@@ -216,12 +223,57 @@ class MapViewModel @Inject constructor(
     fun onMapLongPressed(latitude: Double, longitude: Double) {
         _uiState.update {
             it.copy(
-                addEditMarkedLocation = AddEditMarkedLocationState(
+                mapLongPressState = MapLongPressState(
                     latitude = latitude,
-                    longitude = longitude
+                    longitude = longitude,
+                    address = "Memuat alamat..."
                 )
             )
         }
+
+        viewModelScope.launch {
+            val geocoder = android.location.Geocoder(appContext, Locale.getDefault())
+            var addressText: String = "Alamat tidak tersedia"
+            runCatching {
+                val addresses = geocoder.getFromLocation(latitude, longitude, 1)
+                val first = addresses?.firstOrNull()
+                addressText = first?.getAddressLine(0)?.takeIf { it.isNotBlank() } ?: "Alamat tidak tersedia"
+            }.onFailure {
+                addressText = "Alamat tidak tersedia"
+            }
+
+            _uiState.update { state ->
+                val longPress = state.mapLongPressState ?: return@update state
+                if (longPress.latitude == latitude && longPress.longitude == longitude) {
+                    state.copy(mapLongPressState = longPress.copy(address = addressText))
+                } else {
+                    state
+                }
+            }
+        }
+    }
+
+    fun dismissMapLongPress() {
+        _uiState.update { it.copy(mapLongPressState = null) }
+    }
+
+    fun selectAddMarkedLocation() {
+        val longPress = _uiState.value.mapLongPressState ?: return
+        _uiState.update {
+            it.copy(
+                mapLongPressState = null,
+                addEditMarkedLocation = AddEditMarkedLocationState(
+                    latitude = longPress.latitude,
+                    longitude = longPress.longitude
+                )
+            )
+        }
+    }
+
+    fun selectSaveAsFavorite() {
+        val longPress = _uiState.value.mapLongPressState ?: return
+        _uiState.update { it.copy(mapLongPressState = null) }
+        addFavoriteLocation(longPress.latitude, longPress.longitude)
     }
 
     /** Called to pre-fill lat/lng with current user location */

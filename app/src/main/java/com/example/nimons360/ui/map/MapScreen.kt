@@ -40,6 +40,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.example.nimons360.data.local.db.dao.MarkedLocationWithPhotos
 import java.io.File
 import com.example.nimons360.data.remote.dto.common.FavoriteLocationDto
+import com.example.nimons360.ui.map.components.MapLongPressBottomSheet
 import com.example.nimons360.ui.map.components.MarkedLocationBottomSheet
 import com.example.nimons360.ui.map.components.MarkedLocationDetailBottomSheet
 import com.example.nimons360.ui.map.components.UserInfoBottomSheet
@@ -183,6 +184,16 @@ fun MapScreen(viewModel: MapViewModel) {
         )
     }
 
+    // Map long-press options bottom sheet
+    uiState.mapLongPressState?.let { longPressState ->
+        MapLongPressBottomSheet(
+            state = longPressState,
+            onAddMarkedLocation = viewModel::selectAddMarkedLocation,
+            onSaveAsFavorite = viewModel::selectSaveAsFavorite,
+            onDismiss = viewModel::dismissMapLongPress
+        )
+    }
+
     // Add/Edit marked location bottom sheet
     uiState.addEditMarkedLocation?.let { addEditState ->
         MarkedLocationBottomSheet(
@@ -309,6 +320,7 @@ private fun MapLibreContent(
     val memberMarkers = remember { linkedMapOf<String, org.maplibre.android.annotations.Marker>() }
     val favoriteMarkers = remember { linkedMapOf<String, org.maplibre.android.annotations.Marker>() }
     val markedMarkers = remember { linkedMapOf<String, org.maplibre.android.annotations.Marker>() }
+    val tempLongPressMarkerRef = remember { mutableStateOf<org.maplibre.android.annotations.Marker?>(null) }
     var handledRecenterRequestId by remember { mutableStateOf(0) }
     var handledResetNorthRequestId by remember { mutableStateOf(0) }
 
@@ -452,6 +464,30 @@ private fun MapLibreContent(
             removedMemberIds.forEach { id ->
                 memberMarkers[id]?.let { map.removeMarker(it) }
                 memberMarkers.remove(id)
+            }
+
+            // Sync temporary long-press marker
+            val longPress = state.mapLongPressState
+            if (longPress != null) {
+                val longPressLatLng = LatLng(longPress.latitude, longPress.longitude)
+                val existing = tempLongPressMarkerRef.value
+                if (existing == null) {
+                    val marker = map.addMarker(
+                        MarkerOptions()
+                            .position(longPressLatLng)
+                            .title("Lokasi Dipilih")
+                            .snippet(longPress.address)
+                    )
+                    tempLongPressMarkerRef.value = marker
+                } else {
+                    existing.position = longPressLatLng
+                    existing.snippet = longPress.address
+                }
+            } else {
+                tempLongPressMarkerRef.value?.let { marker ->
+                    map.removeMarker(marker)
+                    tempLongPressMarkerRef.value = null
+                }
             }
 
             state.focusedFavoriteLocationId?.let { favId ->
