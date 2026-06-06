@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
 import coil.compose.AsyncImage
 import com.example.nimons360.data.remote.dto.common.FamilyDetailResponseMembersInner
 import com.example.nimons360.ui.family.detail.component.*
@@ -89,7 +92,7 @@ fun FamilyDetailScreen(
         FamilyDetailContent(
             familyName = family.name ?: "Unknown Family",
             memberCount = family.members?.size ?: 0,
-            iconUrl = family.iconUrl ?: "", // Meneruskan iconUrl dari API
+            iconUrl = family.iconUrl ?: "",
             isJoined = family.isMember ?: false,
             familyCode = family.familyCode ?: "",
             members = family.members ?: emptyList(),
@@ -105,18 +108,20 @@ fun FamilyDetailScreen(
 fun FamilyDetailContent(
     familyName: String,
     memberCount: Int,
-    iconUrl: String, // Tambahan parameter iconUrl
+    iconUrl: String,
     isJoined: Boolean,
     familyCode: String,
     members: List<FamilyDetailResponseMembersInner>,
     currentUserEmail: String?,
     onBack: () -> Unit,
     onJoinFamily: (String) -> Unit,
-    onLeaveFamily: () -> Unit
+    onLeaveFamily: () -> Unit,
+    onShareFamilyLink: () -> Unit
 ) {
-    // State Dialog
+    // State Dialog & Bottom Sheet
     var showJoinDialog by remember { mutableStateOf(false) }
     var showLeaveDialog by remember { mutableStateOf(false) }
+    var showSendMessageSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = Grey50
@@ -241,6 +246,25 @@ fun FamilyDetailContent(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Action Items
+                if (isJoined) {
+                    ActionItem(
+                        icon = Icons.Default.Message,
+                        text = "Send Message",
+                        onClick = { showSendMessageSheet = true }
+                    )
+                }
+
+                ActionItem(
+                    icon = Icons.Default.Share,
+                    text = "Share Family Link",
+                    onClick = onShareFamilyLink
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
                 // Button Join/Leave
                 if (!isJoined) {
                     Surface(
@@ -296,7 +320,7 @@ fun FamilyDetailContent(
         }
     }
 
-    // Komponen Dialog
+    // Komponen Dialog & Bottom Sheet
     if (showJoinDialog) {
         JoinFamilyDialog(
             onDismiss = { showJoinDialog = false },
@@ -317,6 +341,14 @@ fun FamilyDetailContent(
             }
         )
     }
+
+    SendMessageBottomSheet(
+        showSheet = showSendMessageSheet,
+        onDismiss = { showSendMessageSheet = false },
+        onSend = { message ->
+            // TODO: Implementasi kirim pesan
+        }
+    )
 }
 
 // Preview Layar
@@ -334,7 +366,8 @@ fun FamilyDetailNotJoinedPreview() {
             currentUserEmail = null,
             onBack = {},
             onJoinFamily = {},
-            onLeaveFamily = {}
+            onLeaveFamily = {},
+            onShareFamilyLink = {}
         )
     }
 }
@@ -353,7 +386,8 @@ fun FamilyDetailJoinedPreview() {
             currentUserEmail = null,
             onBack = {},
             onJoinFamily = {},
-            onLeaveFamily = {}
+            onLeaveFamily = {},
+            onShareFamilyLink = {}
         )
     }
 }
