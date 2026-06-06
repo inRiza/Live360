@@ -16,8 +16,10 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Looper
+import android.content.res.Configuration
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -48,9 +50,12 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.example.nimons360.data.local.db.dao.MarkedLocationWithPhotos
 import java.io.File
 import com.example.nimons360.data.remote.dto.common.FavoriteLocationDto
+import com.example.nimons360.ui.map.components.LandscapeSideCard
 import com.example.nimons360.ui.map.components.MapLongPressBottomSheet
 import com.example.nimons360.ui.map.components.MarkedLocationBottomSheet
 import com.example.nimons360.ui.map.components.MarkedLocationDetailBottomSheet
+import com.example.nimons360.ui.map.components.MarkedLocationDetailContent
+import com.example.nimons360.ui.map.components.MarkedLocationFormContent
 import com.example.nimons360.ui.map.components.UserInfoBottomSheet
 import com.example.nimons360.ui.map.components.UserMarkerOverlay
 import com.google.android.gms.location.LocationCallback
@@ -77,6 +82,13 @@ fun MapScreen(viewModel: MapViewModel) {
     val snackbarHostState = remember { SnackbarHostState() }
     var recenterRequestId by remember { mutableIntStateOf(0) }
     var resetNorthRequestId by remember { mutableIntStateOf(0) }
+
+    // Deteksi orientasi layar — landscape = SideCard, portrait = BottomSheet
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    // State konfirmasi hapus untuk landscape side card (portrait pakai state di dalam sheet)
+    var showDeleteDialogLandscape by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -182,6 +194,45 @@ fun MapScreen(viewModel: MapViewModel) {
                 .padding(16.dp)
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.0f))
         )
+
+        // ── Landscape: Floating Side Cards (melayang di atas peta) ──────────
+        if (isLandscape) {
+
+            // Side card: Tambah / Edit Lokasi
+            LandscapeSideCard(
+                visible = uiState.addEditMarkedLocation != null,
+                onDismiss = viewModel::dismissAddEditSheet,
+                title = if (uiState.addEditMarkedLocation?.id != null) "Edit Lokasi" else "Tambah Lokasi",
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
+                uiState.addEditMarkedLocation?.let { addEditState ->
+                    MarkedLocationFormContent(
+                        state = addEditState,
+                        viewModel = viewModel,
+                        onDismiss = viewModel::dismissAddEditSheet,
+                        showHeader = false
+                    )
+                }
+            }
+
+            // Side card: Detail Lokasi
+            LandscapeSideCard(
+                visible = uiState.selectedMarkedLocation != null,
+                onDismiss = viewModel::dismissMarkedLocationDetail,
+                title = uiState.selectedMarkedLocation?.location?.name ?: "",
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
+                uiState.selectedMarkedLocation?.let { item ->
+                    MarkedLocationDetailContent(
+                        item = item,
+                        viewModel = viewModel,
+                        onDismiss = viewModel::dismissMarkedLocationDetail,
+                        onRequestDelete = { showDeleteDialogLandscape = true },
+                        showTitleInContent = false
+                    )
+                }
+            }
+        }
     }
 
     // Member info bottom sheet
@@ -203,22 +254,49 @@ fun MapScreen(viewModel: MapViewModel) {
         )
     }
 
-    // Add/Edit marked location bottom sheet
-    uiState.addEditMarkedLocation?.let { addEditState ->
-        MarkedLocationBottomSheet(
-            state = addEditState,
-            viewModel = viewModel,
-            onDismiss = viewModel::dismissAddEditSheet
-        )
+    // Add/Edit & Detail bottom sheets — portrait only
+    // (landscape menggunakan LandscapeSideCard di dalam Box di atas)
+    if (!isLandscape) {
+        uiState.addEditMarkedLocation?.let { addEditState ->
+            MarkedLocationBottomSheet(
+                state = addEditState,
+                viewModel = viewModel,
+                onDismiss = viewModel::dismissAddEditSheet
+            )
+        }
+
+        uiState.selectedMarkedLocation?.let { item ->
+            MarkedLocationDetailBottomSheet(
+                item = item,
+                viewModel = viewModel,
+                onDismiss = viewModel::dismissMarkedLocationDetail
+            )
+        }
     }
 
-    // Detail marked location bottom sheet
-    uiState.selectedMarkedLocation?.let { item ->
-        MarkedLocationDetailBottomSheet(
-            item = item,
-            viewModel = viewModel,
-            onDismiss = viewModel::dismissMarkedLocationDetail
-        )
+    // Konfirmasi hapus untuk landscape (portrait: state ada di dalam MarkedLocationDetailBottomSheet)
+    if (isLandscape && showDeleteDialogLandscape) {
+        uiState.selectedMarkedLocation?.let { item ->
+            AlertDialog(
+                onDismissRequest = { showDeleteDialogLandscape = false },
+                title = { Text("Hapus Lokasi") },
+                text = { Text("Yakin ingin menghapus \"${item.location.name}\"? Semua foto akan ikut terhapus.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteMarkedLocation(item.location.id)
+                            showDeleteDialogLandscape = false
+                            viewModel.dismissMarkedLocationDetail()
+                        }
+                    ) {
+                        Text("Hapus", color = androidx.compose.ui.graphics.Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialogLandscape = false }) { Text("Batal") }
+                }
+            )
+        }
     }
 }
 
