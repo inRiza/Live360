@@ -18,6 +18,7 @@ import com.example.nimons360.R
 import com.example.nimons360.ui.auth.login.LoginActivity
 import com.example.nimons360.ui.profile.components.EditNameBottomSheet
 import com.google.android.material.snackbar.Snackbar
+import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -33,6 +34,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         val tvName = view.findViewById<TextView>(R.id.tv_name)
         val tvEmail = view.findViewById<TextView>(R.id.tv_email)
         val btnSignOut = view.findViewById<TextView>(R.id.btn_sign_out)
+        val btnCustomizePin = view.findViewById<TextView>(R.id.btn_customize_pin)
         val btnEdit = view.findViewById<ImageButton>(R.id.btn_edit)
 
         btnEdit.setOnClickListener {
@@ -42,6 +44,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                     viewModel.updateProfile(newName)
                 }.show(childFragmentManager, "EditNameBottomSheet")
             }
+        }
+
+        btnCustomizePin.setOnClickListener {
+            findNavController().navigate(R.id.customizePinFragment)
         }
 
         btnSignOut.setOnClickListener {

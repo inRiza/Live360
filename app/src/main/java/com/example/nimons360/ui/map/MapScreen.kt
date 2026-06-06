@@ -38,6 +38,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.example.nimons360.data.local.db.dao.MarkedLocationWithPhotos
+import java.io.File
 import com.example.nimons360.data.remote.dto.common.FavoriteLocationDto
 import com.example.nimons360.ui.map.components.MarkedLocationBottomSheet
 import com.example.nimons360.ui.map.components.MarkedLocationDetailBottomSheet
@@ -91,7 +92,10 @@ fun MapScreen(viewModel: MapViewModel) {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_START -> viewModel.startRealtime()
+                Lifecycle.Event.ON_START -> {
+                    viewModel.reloadCustomPins()
+                    viewModel.startRealtime()
+                }
                 Lifecycle.Event.ON_STOP -> viewModel.stopRealtime()
                 else -> Unit
             }
@@ -388,7 +392,8 @@ private fun MapLibreContent(
                 map = map,
                 favorites = state.favoriteLocations,
                 favoriteMarkers = favoriteMarkers,
-                markerFavoriteLookup = markerFavoriteLookup
+                markerFavoriteLookup = markerFavoriteLookup,
+                customPinFavoritePath = state.customPinFavoritePath
             )
 
             // Sync marked location markers
@@ -409,7 +414,8 @@ private fun MapLibreContent(
                     memberMarkers = memberMarkers,
                     markerMemberLookup = markerMemberLookup,
                     pinColor = resolveMarkerColor(currentUser),
-                    drawArrow = true
+                    drawArrow = true,
+                    customPinBiasaPath = state.customPinBiasaPath
                 )
 
                 if (!didMoveToCurrentUser) {
@@ -436,7 +442,8 @@ private fun MapLibreContent(
                     memberMarkers = memberMarkers,
                     markerMemberLookup = markerMemberLookup,
                     pinColor = resolveMarkerColor(member),
-                    drawArrow = false
+                    drawArrow = false,
+                    customPinBiasaPath = state.customPinBiasaPath
                 )
             }
 
@@ -540,14 +547,15 @@ private fun syncMemberMarker(
     memberMarkers: MutableMap<String, org.maplibre.android.annotations.Marker>,
     markerMemberLookup: MutableMap<Long, String>,
     pinColor: Int,
-    drawArrow: Boolean
+    drawArrow: Boolean,
+    customPinBiasaPath: String?
 ) {
     val latLng = LatLng(member.latitude, member.longitude)
     val existingMarker = memberMarkers[member.id]
 
     if (existingMarker == null) {
         val icon = IconFactory.getInstance(context).fromBitmap(
-            createMemberBitmap(context, member.fullName, pinColor, member.rotation, drawArrow)
+            createMemberBitmap(context, member.fullName, pinColor, member.rotation, drawArrow, customPinBiasaPath)
         )
         val marker = map.addMarker(
             MarkerOptions()
@@ -560,7 +568,7 @@ private fun syncMemberMarker(
     } else {
         existingMarker.position = latLng
         val icon = IconFactory.getInstance(context).fromBitmap(
-            createMemberBitmap(context, member.fullName, pinColor, member.rotation, drawArrow)
+            createMemberBitmap(context, member.fullName, pinColor, member.rotation, drawArrow, customPinBiasaPath)
         )
         existingMarker.icon = icon
         markerMemberLookup[existingMarker.id] = member.id
@@ -572,14 +580,15 @@ private fun syncFavoriteMarkers(
     map: MapLibreMap,
     favorites: List<FavoriteLocationDto>,
     favoriteMarkers: MutableMap<String, org.maplibre.android.annotations.Marker>,
-    markerFavoriteLookup: MutableMap<Long, String>
+    markerFavoriteLookup: MutableMap<Long, String>,
+    customPinFavoritePath: String?
 ) {
     favorites.forEach { fav ->
         val latLng = LatLng(fav.latitude, fav.longitude)
         val existing = favoriteMarkers[fav.id]
         if (existing == null) {
             val icon = IconFactory.getInstance(context).fromBitmap(
-                createFavoriteBitmap(context)
+                createFavoriteBitmap(context, customPinFavoritePath)
             )
             val marker = map.addMarker(
                 MarkerOptions()
@@ -643,7 +652,25 @@ private fun syncMarkedLocationMarkers(
     }
 }
 
-private fun createMemberBitmap(context: Context, name: String, color: Int, rotation: Float, drawArrow: Boolean): Bitmap {
+private fun createMemberBitmap(
+    context: Context,
+    name: String,
+    color: Int,
+    rotation: Float,
+    drawArrow: Boolean,
+    customPinBiasaPath: String?
+): Bitmap {
+    if (customPinBiasaPath != null) {
+        val file = File(customPinBiasaPath)
+        if (file.exists()) {
+            val raw = android.graphics.BitmapFactory.decodeFile(customPinBiasaPath)
+            if (raw != null) {
+                val baseDp = if (drawArrow) 46 else 38
+                val size = (baseDp * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(baseDp)
+                return Bitmap.createScaledBitmap(raw, size, size, true)
+            }
+        }
+    }
     val baseDp = if (drawArrow) 52 else 42
     val size = (baseDp * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(baseDp)
     val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
@@ -680,7 +707,18 @@ private fun createMemberBitmap(context: Context, name: String, color: Int, rotat
     return bitmap
 }
 
-private fun createFavoriteBitmap(context: Context): Bitmap {
+private fun createFavoriteBitmap(context: Context, customPinFavoritePath: String?): Bitmap {
+    if (customPinFavoritePath != null) {
+        val file = File(customPinFavoritePath)
+        if (file.exists()) {
+            val raw = android.graphics.BitmapFactory.decodeFile(customPinFavoritePath)
+            if (raw != null) {
+                val baseDp = 34
+                val size = (baseDp * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(baseDp)
+                return Bitmap.createScaledBitmap(raw, size, size, true)
+            }
+        }
+    }
     val size = (34 * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(34)
     val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)

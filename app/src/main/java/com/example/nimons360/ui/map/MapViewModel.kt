@@ -13,6 +13,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.nimons360.data.local.db.dao.MarkedLocationWithPhotos
 import com.example.nimons360.data.local.db.entity.MarkedLocationEntity
 import com.example.nimons360.data.local.preference.TokenPreference
+import com.example.nimons360.data.local.preference.PinPreference
 import com.example.nimons360.data.remote.dto.common.FavoriteLocationDto
 import com.example.nimons360.data.remote.websocket.WebSocketManager
 import com.example.nimons360.data.remote.websocket.model.MemberPresencePayload
@@ -114,6 +115,8 @@ data class MapUiState(
     val markedLocations: List<MarkedLocationWithPhotos> = emptyList(),
     val addEditMarkedLocation: AddEditMarkedLocationState? = null,  // non-null = show sheet
     val selectedMarkedLocation: MarkedLocationWithPhotos? = null,   // non-null = show detail
+    val customPinBiasaPath: String? = null,
+    val customPinFavoritePath: String? = null,
     val errorMessage: String? = null
 )
 
@@ -124,6 +127,7 @@ class MapViewModel @Inject constructor(
     private val webSocketManager: WebSocketManager,
     private val markedLocationRepository: MarkedLocationRepository,
     private val tokenPreference: TokenPreference,
+    private val pinPreference: PinPreference,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -184,6 +188,7 @@ class MapViewModel @Inject constructor(
         loadFavoriteLocations()
         observeWebSocketEvents()
         observeMarkedLocations()
+        reloadCustomPins()
     }
 
     // ─── Marked Locations ────────────────────────────────────────────────────
@@ -193,6 +198,17 @@ class MapViewModel @Inject constructor(
             markedLocationRepository.getAllWithPhotos().collect { list ->
                 _uiState.update { it.copy(markedLocations = list) }
             }
+        }
+    }
+
+    fun reloadCustomPins() {
+        val biasPath = pinPreference.getCustomPinBiasaPath()
+        val favPath = pinPreference.getCustomPinFavoritePath()
+        _uiState.update {
+            it.copy(
+                customPinBiasaPath = biasPath,
+                customPinFavoritePath = favPath
+            )
         }
     }
 

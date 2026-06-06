@@ -80,7 +80,28 @@
             android:paddingStart="16dp"
             android:paddingTop="24dp"
             android:paddingEnd="16dp"
-            android:paddingBottom="10dp">
+            android:paddingBottom="0dp">
+
+            <TextView
+                android:id="@+id/btn_customize_pin"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/profile_bg_customize_pin"
+                android:gravity="center"
+                android:text="Customize Pin"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="24dp">
 
             <TextView
                 android:id="@+id/btn_sign_out"
