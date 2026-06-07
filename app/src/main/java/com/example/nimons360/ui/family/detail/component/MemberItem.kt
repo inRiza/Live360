@@ -23,6 +23,9 @@ import com.example.nimons360.ui.theme.Nimons360Theme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 
 @Composable
 fun MemberItem(
@@ -33,6 +36,7 @@ fun MemberItem(
     isBlurred: Boolean = false,
     isYou: Boolean = false,
     showGreet: Boolean = false,
+    profileImageUrl: String? = null,
     onGreet: () -> Unit = {}
 ) {
     // Blurring State
@@ -46,18 +50,37 @@ fun MemberItem(
         modifier = rowModifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Foto Profil (pake inisial)
+        // Foto Profil (pake image kalo ada, atau inisial kalo ga ada)
         Box(
             modifier = Modifier
                 .size(45.dp)
                 .background(avatarColor, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = initial,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
+            val imageUrl = if (profileImageUrl?.startsWith("http") == true) {
+                profileImageUrl
+            } else if (!profileImageUrl.isNullOrBlank()) {
+                "${com.example.nimons360.utils.Constants.BASE_URL}${profileImageUrl}"
+            } else {
+                null
+            }
+
+            if (imageUrl != null) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = "Profile Photo",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(
+                    text = initial,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
         // Informasi Teks

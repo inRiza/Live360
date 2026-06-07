@@ -103,6 +103,8 @@ fun FamilyDetailScreen(
             onBack = onBack,
             onJoinFamily = { code -> viewModel.joinFamily(code) },
             onLeaveFamily = { viewModel.leaveFamily() },
+            onSendMessage = { message -> viewModel.sendFamilyNotification(familyId, message) },
+            onSendGreeting = { memberId, message -> viewModel.sendGreeting(familyId, memberId, message) },
             onShareFamilyLink = {
                 // Android Share Sheet
                 val shareMessage = "Ayo bergabung dengan keluarga ${family.name} di Nimons360!\nKlik link berikut untuk bergabung:\n\nnimons360://family/${family.id}?code=${family.familyCode}"
@@ -132,12 +134,15 @@ fun FamilyDetailContent(
     onBack: () -> Unit,
     onJoinFamily: (String) -> Unit,
     onLeaveFamily: () -> Unit,
+    onSendMessage: (message: String) -> Unit = {},
+    onSendGreeting: (memberId: Int, message: String) -> Unit = { _, _ -> },
     onShareFamilyLink: () -> Unit
 ) {
     // State Dialog & Bottom Sheet
     var showJoinDialog by remember { mutableStateOf(false) }
     var showLeaveDialog by remember { mutableStateOf(false) }
     var showSendMessageSheet by remember { mutableStateOf(false) }
+    var greetTarget by remember { mutableStateOf<Pair<Int, String>?>(null) }
 
     Scaffold(
         containerColor = Grey50
@@ -258,7 +263,15 @@ fun FamilyDetailContent(
                                 .joinToString(""),
                             avatarColor = avaColors[index % avaColors.size],
                             isBlurred = !isJoined,
-                            isYou = (email == currentUserEmail)
+                            isYou = (email == currentUserEmail),
+                            showGreet = isJoined && email != currentUserEmail && memberId != null,
+                            profileImageUrl = member.profileImageUrl,
+                            onGreet = {
+                                if (memberId != null) {
+                                    greetTarget = Pair(memberId, name)
+                                }
+                            }
+
                         )
                     }
                 }
@@ -361,50 +374,60 @@ fun FamilyDetailContent(
 
     SendMessageBottomSheet(
         showSheet = showSendMessageSheet,
+        familyName = familyName,
         onDismiss = { showSendMessageSheet = false },
+        onSend = { message -> onSendMessage(message) }
+    )
+
+    SendGreetingBottomSheet(
+        showSheet = greetTarget != null,
+        targetName = greetTarget?.second ?: "",
+        onDismiss = { greetTarget = null },
         onSend = { message ->
-            // TODO: Implementasi kirim pesan
+            greetTarget?.let { (memberId, _) ->
+                onSendGreeting(memberId, message)
+            }
         }
     )
 }
 
-// Preview Layar
-@Preview(showBackground = true, name = "1. Belum Bergabung")
-@Composable
-fun FamilyDetailNotJoinedPreview() {
-    Nimons360Theme {
-        FamilyDetailContent(
-            familyName = "Keluarga Cemara",
-            memberCount = 4,
-            iconUrl = "",
-            isJoined = false,
-            familyCode = "XXXXXX",
-            members = emptyList(),
-            currentUserEmail = null,
-            onBack = {},
-            onJoinFamily = {},
-            onLeaveFamily = {},
-            onShareFamilyLink = {}
-        )
-    }
-}
+// // Preview Layar
+// @Preview(showBackground = true, name = "1. Belum Bergabung")
+// @Composable
+// fun FamilyDetailNotJoinedPreview() {
+//     Nimons360Theme {
+//         FamilyDetailContent(
+//             familyName = "Keluarga Cemara",
+//             memberCount = 4,
+//             iconUrl = "",
+//             isJoined = false,
+//             familyCode = "XXXXXX",
+//             members = emptyList(),
+//             currentUserEmail = null,
+//             onBack = {},
+//             onJoinFamily = {},
+//             onLeaveFamily = {},
+//             onShareFamilyLink = {}
+//         )
+//     }
+// }
 
-@Preview(showBackground = true, name = "2. Sudah Bergabung")
-@Composable
-fun FamilyDetailJoinedPreview() {
-    Nimons360Theme {
-        FamilyDetailContent(
-            familyName = "Keluarga Cemara",
-            memberCount = 4,
-            iconUrl = "",
-            isJoined = true,
-            familyCode = "MFA287",
-            members = emptyList(),
-            currentUserEmail = null,
-            onBack = {},
-            onJoinFamily = {},
-            onLeaveFamily = {},
-            onShareFamilyLink = {}
-        )
-    }
-}
+// @Preview(showBackground = true, name = "2. Sudah Bergabung")
+// @Composable
+// fun FamilyDetailJoinedPreview() {
+//     Nimons360Theme {
+//         FamilyDetailContent(
+//             familyName = "Keluarga Cemara",
+//             memberCount = 4,
+//             iconUrl = "",
+//             isJoined = true,
+//             familyCode = "MFA287",
+//             members = emptyList(),
+//             currentUserEmail = null,
+//             onBack = {},
+//             onJoinFamily = {},
+//             onLeaveFamily = {},
+//             onShareFamilyLink = {}
+//         )
+//     }
+// }

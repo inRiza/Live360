@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nimons360.data.remote.dto.response.FamilyDetailResponse
 import com.example.nimons360.data.repository.FamilyRepository
+import com.example.nimons360.data.repository.NotificationRepository
 import com.example.nimons360.data.repository.UserRepository
 import com.example.nimons360.utils.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class FamilyDetailViewModel @Inject constructor(
     private val repository: FamilyRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     // State Data
@@ -90,6 +92,18 @@ class FamilyDetailViewModel @Inject constructor(
             } else {
                 _actionState.value = Result.Error("Unknown Error.")
             }
+        }
+    }
+
+    fun sendFamilyNotification(familyId: Int, message: String) {
+        viewModelScope.launch {
+            notificationRepository.sendFamilyNotification(familyId, message)
+        }
+    }
+
+    fun sendGreeting(familyId: Int, targetUserId: Int, message: String) {
+        viewModelScope.launch {
+            notificationRepository.sendGreeting(familyId, targetUserId, message)
         }
     }
 
