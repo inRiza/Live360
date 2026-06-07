@@ -80,7 +80,37 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 ![Leave Family Dialog](screenshots/12leavefam.jpeg)
 
 13. Join Family Dialog
+
 ![Join Family Dialog](screenshots/13joinfamdialog.jpeg)
+
+14. Family Detail (new)
+
+![Family Detail New](screenshots/14famdetail.jpg)
+
+15. Family Detail Share (new)
+![Family Detail New](screenshots/15famdetail.jpg)
+
+16. Family Detail Msg (new)
+![Family Detail New](screenshots/16famdetail.jpg)
+
+17. New Profile
+![New Profile](screenshots/17newprofile.jpg)
+
+18. Custom Pin
+![Custom Pin](screenshots/18custompin.jpg)
+
+19. New Map
+![New Map](screenshots/19map.jpg)
+
+20. New Map
+![New Map](screenshots/20map.jpg)
+
+20. New Map
+![New Map](screenshots/20map.jpg)
+
+21. New Map
+![New Map](screenshots/21map.jpg)
+
 
 ---
 
@@ -122,6 +152,7 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 - Search Family
 - Internet Status
 - Mark Favorite Location
+- Customize Pin
 
 ---
 
