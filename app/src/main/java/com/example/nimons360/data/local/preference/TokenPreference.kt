@@ -15,6 +15,7 @@ class TokenPreference @Inject constructor(
         private const val KEY_USER_NAME = "user_name"
         private const val KEY_USER_ID = "user_id"
     }
+
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun saveToken(token: String) {
@@ -33,10 +34,6 @@ class TokenPreference @Inject constructor(
         return prefs.getString(KEY_USER_NAME, null)
     }
 
-    fun clear() {
-        prefs.edit {
-            remove(KEY_TOKEN)
-            remove(KEY_USER_NAME)
     fun saveUserId(userId: Int) {
         prefs.edit { putInt(KEY_USER_ID, userId) }
     }
@@ -46,8 +43,9 @@ class TokenPreference @Inject constructor(
     }
 
     fun clear() {
-        prefs.edit { 
-            remove(KEY_TOKEN) 
+        prefs.edit {
+            remove(KEY_TOKEN)
+            remove(KEY_USER_NAME)
             remove(KEY_USER_ID)
         }
     }

@@ -26,13 +26,9 @@ fun SendMessageBottomSheet(
     onSend: (String) -> Unit
 ) {
     if (!showSheet) return
-    if (showSheet) {
-        val sheetState = rememberModalBottomSheetState()
-        var messageInput by rememberSaveable { mutableStateOf("") 
-    } //responsive
 
     val sheetState = rememberModalBottomSheetState()
-    var messageInput by remember { mutableStateOf("") }
+    var messageInput by rememberSaveable { mutableStateOf("") }
 
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     val quickMessages = when {
@@ -81,7 +77,6 @@ fun SendMessageBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // quick message chips
             Text(
                 text = "Quick messages",
                 fontSize = 13.sp,
