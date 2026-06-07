@@ -86,11 +86,20 @@ class EditNameBottomSheet : BottomSheetDialogFragment() {
 
 		btnSave.setOnClickListener {
 			val name = editName.text.toString().trim()
+
+			// Validasi Input
 			if (name.isEmpty()) {
-				tilName?.error = "Name cannot be empty"
+				tilName?.error = "Nama tidak boleh kosong"
 				editName.requestFocus()
 				return@setOnClickListener
 			}
+
+			if (name.length > 50) {
+				tilName?.error = "Nama maksimal 50 karakter"
+				editName.requestFocus()
+				return@setOnClickListener
+			}
+
 			tilName?.error = null
 			viewModel.updateName(name)
 			dismiss()
@@ -174,7 +183,7 @@ class EditNameBottomSheet : BottomSheetDialogFragment() {
 								btnChangePhoto.isEnabled = true
 								btnSave.isEnabled = true
 							}
-                        }
+						}
 					}
 				}
 			}

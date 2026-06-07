@@ -9,6 +9,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -18,7 +19,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    
+
     @Provides
     @Singleton
     fun provideOkHttpClient(
@@ -45,11 +46,14 @@ object NetworkModule {
 
         builder.addInterceptor(TokenExpiredInterceptor(tokenPreference))
 
+        // Header Authorization/Cookie
         if (BuildConfig.DEBUG) {
             val logging = HttpLoggingInterceptor { message ->
                 Log.d("Nimons360Http", message)
             }.apply {
-                level = HttpLoggingInterceptor.Level.BODY
+                level = HttpLoggingInterceptor.Level.HEADERS
+                redactHeader("Authorization")
+                redactHeader("Cookie")
             }
             builder.addInterceptor(logging)
         }
