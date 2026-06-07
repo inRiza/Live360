@@ -10,6 +10,9 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -19,8 +22,10 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.signature.ObjectKey
 import com.example.nimons360.R
 import com.example.nimons360.ui.auth.login.LoginActivity
+import com.example.nimons360.ui.profile.components.CustomizePinSection
 import com.example.nimons360.ui.profile.components.EditNameBottomSheet
 import com.google.android.material.snackbar.Snackbar
+import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -39,6 +44,18 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         val tvEmail = view.findViewById<TextView>(R.id.tv_email)
         val btnSignOut = view.findViewById<TextView>(R.id.btn_sign_out)
         val btnEdit = view.findViewById<ImageButton>(R.id.btn_edit)
+        val composeCustomizePinSection = view.findViewById<ComposeView>(R.id.compose_customize_pin_section)
+
+        composeCustomizePinSection.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                MaterialTheme {
+                    CustomizePinSection(
+                        onClick = { findNavController().navigate(R.id.customizePinFragment) }
+                    )
+                }
+            }
+        }
 
         val switchNotification = view.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switch_notification)
         val switchLocation = view.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switch_location)

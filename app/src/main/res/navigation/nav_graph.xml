@@ -21,4 +21,9 @@
         android:name="com.example.nimons360.ui.profile.ProfileFragment"
         android:label="Profile" />
 
+    <fragment
+        android:id="@+id/customizePinFragment"
+        android:name="com.example.nimons360.ui.profile.CustomizePinFragment"
+        android:label="Customize Pin" />
+
 </navigation>
