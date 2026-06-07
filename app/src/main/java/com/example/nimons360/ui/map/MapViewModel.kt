@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nimons360.data.local.db.dao.MarkedLocationWithPhotos
 import com.example.nimons360.data.local.db.entity.MarkedLocationEntity
+import com.example.nimons360.data.local.preference.LocationPreference
 import com.example.nimons360.data.local.preference.TokenPreference
 import com.example.nimons360.data.local.preference.PinPreference
 import com.example.nimons360.data.remote.dto.common.FavoriteLocationDto
@@ -146,6 +147,7 @@ class MapViewModel @Inject constructor(
     private val markedLocationRepository: MarkedLocationRepository,
     private val tokenPreference: TokenPreference,
     private val pinPreference: PinPreference,
+    private val locationPreference: LocationPreference,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -218,6 +220,21 @@ class MapViewModel @Inject constructor(
         observeWebSocketEvents()
         observeMarkedLocations()
         reloadCustomPins()
+        observeLocationSharingChanges()
+    }
+
+    private fun observeLocationSharingChanges() {
+        viewModelScope.launch {
+            com.example.nimons360.utils.LocationSharingBus.events.collect { enabled ->
+                if (!enabled) {
+                    // Matikan: hapus marker currentUser dari peta dan kirim presence terakhir kosong
+                    _uiState.update { it.copy(currentUser = null) }
+                } else {
+                    // Nyalakan: paksa update marker segera
+                    updateCurrentUserMarker()
+                }
+            }
+        }
     }
 
 
@@ -772,6 +789,8 @@ class MapViewModel @Inject constructor(
 
     private fun publishCurrentPresence() {
         if (!_uiState.value.isWsConnected) return
+        // Jika berbagi lokasi dimatikan, jangan kirim presence ke server
+        if (!locationPreference.isLocationSharingEnabled()) return
         val lat = currentLatitude ?: return
         val lng = currentLongitude ?: return
         val networkStatus = readNetworkStatus()
@@ -841,6 +860,13 @@ class MapViewModel @Inject constructor(
     private fun updateCurrentUserMarker() {
         val lat = currentLatitude ?: return
         val lng = currentLongitude ?: return
+
+        // Jika berbagi lokasi mati, hapus current user dari peta (tidak terlihat orang lain)
+        if (!locationPreference.isLocationSharingEnabled()) {
+            _uiState.update { it.copy(currentUser = null) }
+            return
+        }
+
         val networkStatus = readNetworkStatus()
 
 

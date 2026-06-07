@@ -257,6 +257,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun registerFcmToken() {
+        // no subscribe jika user sudah matikan notifikasi
         if (!notificationPreference.isNotificationEnabled()) return
 
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->

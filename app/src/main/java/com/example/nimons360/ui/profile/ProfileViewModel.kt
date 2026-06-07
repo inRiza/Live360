@@ -142,6 +142,7 @@ class ProfileViewModel @Inject constructor(
     fun toggleLocationSharing(enabled: Boolean) {
         locationPreference.setLocationSharingEnabled(enabled)
         isLocationSharingEnabled.value = enabled
+        com.example.nimons360.utils.LocationSharingBus.notify(enabled)
     }
 
     fun signOut() {
