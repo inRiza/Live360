@@ -131,6 +131,7 @@ Nimons360 adalah aplikasi berbasis Android yang memungkinkan pengguna untuk:
 
 ## Kontribusi
 
+**Jumlah jam persiapan pengerjaan & pembagian: [Dokumen Planning Pengerjaan](https://docs.google.com/document/d/1EobMEFAjJVb5VNTqC8RENsRP7jartY8YjeTelTSAfPI/edit?usp=sharing)
 
 | NIM      | Nama                    | Tugas                                                                                                          |
 | -------- | ----------------------- | -------------------------------------------------------------------------------------------------------------- |
