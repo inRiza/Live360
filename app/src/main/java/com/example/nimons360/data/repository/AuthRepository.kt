@@ -29,6 +29,9 @@ class AuthRepository @Inject constructor(
                         Result.Error("Failed to login: empty token")
                     } else {
                         tokenPreference.saveToken(token)
+                        loginData.user?.id?.let { userId ->
+                            tokenPreference.saveUserId(userId)
+                        }
                         Result.Success(loginData)
                     }
                 } else {

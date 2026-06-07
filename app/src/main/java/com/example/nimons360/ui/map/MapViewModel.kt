@@ -72,7 +72,8 @@ data class MemberMapUi(
 	val internetStatus: String,
 	val isCurrentUser: Boolean,
 	val familyIds: Set<Int> = emptySet(),
-	val lastUpdatedAt: Long
+	val lastUpdatedAt: Long,
+	val profileImageUrl: String? = null
 )
 
 data class FamilyFilterOption(
@@ -119,6 +120,7 @@ class MapViewModel @Inject constructor(
 	private var currentUserName: String = "You"
 	private var currentUserEmail: String = "you@nimons.local"
 	private var currentUserId: Int? = null
+	private var currentUserProfileImageUrl: String? = null
 	private var myFamilyIds: Set<Int> = emptySet()
 	private var isFamilyContextLoaded: Boolean = false
 
@@ -279,6 +281,7 @@ class MapViewModel @Inject constructor(
 					currentUserName = profile?.fullName.orEmpty().ifBlank { "You" }
 					currentUserEmail = profile?.email.orEmpty().ifBlank { "you@nimons.local" }
 					currentUserId = profile?.id
+					currentUserProfileImageUrl = profile?.profileImageUrl
 				}
 				is Result.Error -> {
 					_uiState.update { it.copy(errorMessage = result.message) }
@@ -419,7 +422,8 @@ class MapViewModel @Inject constructor(
 					"userId" to (currentUserId?.toString() ?: ""),
 					"familyIds" to myFamilyIds.sorted(),
 					"familyCount" to myFamilyIds.size,
-					"source" to "android"
+					"source" to "android",
+					"profileImageUrl" to (currentUserProfileImageUrl ?: "")
 				)
 			)
 		)
@@ -483,7 +487,8 @@ class MapViewModel @Inject constructor(
 			internetStatus = networkStatus,
 			isCurrentUser = true,
 			familyIds = myFamilyIds,
-			lastUpdatedAt = System.currentTimeMillis()
+			lastUpdatedAt = System.currentTimeMillis(),
+			profileImageUrl = currentUserProfileImageUrl
 		)
 		_uiState.update { it.copy(currentUser = current) }
 		recomputeNearbyMembers()
@@ -614,6 +619,7 @@ class MapViewModel @Inject constructor(
 			(metadata["email"] as? String).orEmpty()
 		}
 		val safeName = fullName.ifBlank { (metadata["fullName"] as? String).orEmpty().ifBlank { "Unknown" } }
+		val profileImageUrl = (metadata["profileImageUrl"] as? String)?.takeIf { it.isNotBlank() }
 		return MemberMapUi(
 			id = memberIdFrom(userId, safeEmail),
 			userId = userId,
@@ -627,7 +633,8 @@ class MapViewModel @Inject constructor(
 			internetStatus = internetStatus.ifBlank { "mobile" },
 			isCurrentUser = false,
 			familyIds = extractFamilyIdsFromMetadata(),
-			lastUpdatedAt = now
+			lastUpdatedAt = now,
+			profileImageUrl = profileImageUrl
 		)
 	}
 

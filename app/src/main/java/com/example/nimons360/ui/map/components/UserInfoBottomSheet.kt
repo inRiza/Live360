@@ -29,11 +29,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.nimons360.ui.components.AppButton
 import com.example.nimons360.ui.map.MemberMapUi
 import com.example.nimons360.ui.theme.Blue100
@@ -45,6 +47,7 @@ import com.example.nimons360.ui.theme.Grey50
 import com.example.nimons360.ui.theme.Grey600
 import com.example.nimons360.ui.theme.Grey900
 import com.example.nimons360.ui.theme.White
+import com.example.nimons360.utils.Constants
 import java.util.Locale
 
 @Composable
@@ -81,6 +84,10 @@ fun UserInfoBottomSheet(
 				.joinToString("") { it.first().uppercase() }
 				.ifBlank { "?" }
 			val avatarBadgeColor = memberMarkerColor?.let { Color(it) } ?: Blue100
+			val profileImageUrl = if (!member.profileImageUrl.isNullOrBlank()) {
+				if (member.profileImageUrl.startsWith("http")) member.profileImageUrl
+				else "${Constants.BASE_URL}${member.profileImageUrl}"
+			} else null
 
 			Surface(
 				modifier = Modifier
@@ -106,12 +113,23 @@ fun UserInfoBottomSheet(
 							),
 						contentAlignment = Alignment.Center
 					) {
-						Text(
-							text = initials,
-							color = White,
-							fontSize = 18.sp,
-							fontWeight = FontWeight.Bold
-						)
+						if (profileImageUrl != null) {
+							AsyncImage(
+								model = profileImageUrl,
+								contentDescription = "Foto profil ${member.fullName}",
+								contentScale = ContentScale.Crop,
+								modifier = Modifier
+									.size(54.dp)
+									.clip(CircleShape)
+							)
+						} else {
+							Text(
+								text = initials,
+								color = White,
+								fontSize = 18.sp,
+								fontWeight = FontWeight.Bold
+							)
+						}
 					}
 
 					Spacer(modifier = Modifier.size(12.dp))

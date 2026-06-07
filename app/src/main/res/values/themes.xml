@@ -5,6 +5,10 @@
         <item name="colorPrimaryVariant">@color/blue_800</item>
         <item name="colorOnPrimary">@color/white</item>
 
+        <item name="colorSecondary">@color/blue_600</item>
+        <item name="colorSecondaryVariant">@color/blue_800</item>
+        <item name="colorOnSecondary">@color/white</item>
+
         <item name="android:colorBackground">@color/grey_50</item>
         <item name="colorSurface">@color/white</item>
         <item name="colorOnSurface">@color/grey_900</item>

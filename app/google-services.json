@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "184849419646",
+    "project_id": "labpro-mad",
+    "storage_bucket": "labpro-mad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:184849419646:android:2072553c6ff85820d6b72f",
+        "android_client_info": {
+          "package_name": "com.labpro.mad"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAl5PcqUOpHmCtaVMU3Px8ucpfXsj5JSY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
