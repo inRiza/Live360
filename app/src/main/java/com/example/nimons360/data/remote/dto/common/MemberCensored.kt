@@ -27,6 +27,7 @@ import com.google.gson.annotations.SerializedName
  *
  * @param fullName 
  * @param email 
+ * @param profileImageUrl 
  */
 
 
@@ -36,7 +37,10 @@ data class MemberCensored (
     val fullName: kotlin.String? = null,
 
     @SerializedName("email")
-    val email: kotlin.String? = null
+    val email: kotlin.String? = null,
+
+    @SerializedName("profileImageUrl")
+    val profileImageUrl: kotlin.String? = null
 
 )
 

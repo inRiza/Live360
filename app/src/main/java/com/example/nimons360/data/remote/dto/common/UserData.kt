@@ -29,6 +29,7 @@ import com.google.gson.annotations.SerializedName
  * @param nim 
  * @param email 
  * @param fullName 
+ * @param profileImageUrl 
  */
 
 
@@ -44,7 +45,10 @@ data class UserData (
     val email: kotlin.String? = null,
 
     @SerializedName("fullName")
-    val fullName: kotlin.String? = null
+    val fullName: kotlin.String? = null,
+
+    @SerializedName("profileImageUrl")
+    val profileImageUrl: kotlin.String? = null
 
 )
 

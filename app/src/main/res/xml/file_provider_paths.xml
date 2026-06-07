@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Internal cache for camera captures -->
+    <cache-path
+        name="camera_photos"
+        path="camera_photos/" />
+    <!-- Internal cache for gallery copies -->
+    <cache-path
+        name="gallery_photos"
+        path="gallery_photos/" />
+    <!-- Permanent marked-location photos in filesDir -->
+    <files-path
+        name="marked_location_photos"
+        path="marked_location_photos/" />
+</paths>

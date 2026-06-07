@@ -27,6 +27,7 @@ import com.google.gson.annotations.SerializedName
  *
  * @param fullName 
  * @param email 
+ * @param profileImageUrl 
  * @param id 
  * @param joinedAt 
  */
@@ -39,6 +40,9 @@ data class FamilyDetailResponseMembersInner (
 
     @SerializedName("email")
     val email: kotlin.String? = null,
+
+    @SerializedName("profileImageUrl")
+    val profileImageUrl: kotlin.String? = null,
 
     @SerializedName("id")
     val id: kotlin.Int? = null,

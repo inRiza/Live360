@@ -9,6 +9,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.nimons360.data.local.preference.TokenPreference
+import com.example.nimons360.data.local.preference.NotificationPreference
+import com.example.nimons360.data.repository.NotificationRepository
+import com.google.firebase.messaging.FirebaseMessaging
 import com.example.nimons360.ui.auth.login.LoginActivity
 import com.example.nimons360.utils.NetworkMonitor
 import com.example.nimons360.utils.NoConnectionDialog
@@ -20,9 +23,11 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.ui.NavigationUI
 import android.view.MenuItem
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.forEach
 import androidx.navigation.NavController
+import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -38,6 +43,12 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var userRepository: com.example.nimons360.data.repository.UserRepository
+
+    @Inject
+    lateinit var notificationRepository: NotificationRepository
+
+    @Inject
+    lateinit var notificationPreference: NotificationPreference
 
     private var noConnectionDialog: NoConnectionDialog? = null
     private var wasDisconnected = false
@@ -58,6 +69,8 @@ class MainActivity : AppCompatActivity() {
             finish()
             return
         }
+
+        registerFcmToken()
 
         setContentView(R.layout.activity_main)
 
@@ -85,8 +98,9 @@ class MainActivity : AppCompatActivity() {
         // network sensing
         observeNetwork()
 
-        // load user ava
+        // load user avatar & observe profile updates
         loadUserAvatar()
+        observeProfileUpdates()
 
         val title = findViewById<TextView>(R.id.tv_top_bar_title)
         navController.addOnDestinationChangedListener { _, destination, _ ->
@@ -126,7 +140,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val avatar = findViewById<TextView>(R.id.tv_top_bar_avatar)
+        val avatar = findViewById<android.view.View>(R.id.layout_top_bar_avatar)
         avatar.setOnClickListener {
             navController.navigate(R.id.profileFragment)
         }
@@ -172,13 +186,54 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadUserAvatar() {
+    private fun observeProfileUpdates() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                com.example.nimons360.utils.ProfileUpdateBus.events.collect { updatedAt ->
+                    loadUserAvatar(cacheBustKey = updatedAt)
+                }
+            }
+        }
+    }
+
+    private fun loadUserAvatar(cacheBustKey: Long = 0L) {
         lifecycleScope.launch {
             when (val res = userRepository.getProfile()) {
                 is com.example.nimons360.utils.Result.Success -> {
                     val name = res.data?.fullName
                     val initials = getInitials(name)
-                    findViewById<TextView>(R.id.tv_top_bar_avatar).text = initials
+                    val tvAvatar = findViewById<TextView>(R.id.tv_top_bar_avatar)
+                    val ivAvatar = findViewById<ImageView>(R.id.iv_top_bar_avatar)
+
+                    val imageUrl = if (res.data?.profileImageUrl?.startsWith("http") == true) {
+                        res.data.profileImageUrl
+                    } else if (!res.data?.profileImageUrl.isNullOrBlank()) {
+                        "${com.example.nimons360.utils.Constants.BASE_URL}${res.data.profileImageUrl}"
+                    } else {
+                        null
+                    }
+
+                    if (imageUrl != null) {
+                        tvAvatar.visibility = android.view.View.GONE
+                        ivAvatar.visibility = android.view.View.VISIBLE
+                        Glide.with(this@MainActivity)
+                            .load(imageUrl)
+                            .circleCrop()
+                            .skipMemoryCache(true)
+                            .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
+                            .signature(com.bumptech.glide.signature.ObjectKey("$imageUrl-$cacheBustKey"))
+                            .placeholder(R.drawable.bg_avatar_profile)
+                            .error(R.drawable.bg_avatar_profile)
+                            .into(ivAvatar)
+                    } else {
+                        tvAvatar.visibility = android.view.View.VISIBLE
+                        ivAvatar.visibility = android.view.View.GONE
+                        tvAvatar.text = initials
+                    }
+
+                    res.data?.id?.let { userId ->
+                        tokenPreference.saveUserId(userId)
+                    }
                 }
                 else -> { }
             }
@@ -199,6 +254,22 @@ class MainActivity : AppCompatActivity() {
         if (isFinishing || isDestroyed) return
         noConnectionDialog = NoConnectionDialog(this)
         noConnectionDialog?.show()
+    }
+
+    private fun registerFcmToken() {
+        // no subscribe jika user sudah matikan notifikasi
+        if (!notificationPreference.isNotificationEnabled()) return
+
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                if (!token.isNullOrEmpty()) {
+                    lifecycleScope.launch {
+                        notificationRepository.subscribeToken(token)
+                    }
+                }
+            }
+        }
     }
 
     override fun onDestroy() {

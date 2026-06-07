@@ -29,6 +29,7 @@ import com.google.gson.annotations.SerializedName
  * @param nim 
  * @param email 
  * @param fullName 
+ * @param profileImageUrl 
  * @param createdAt 
  * @param updatedAt 
  */
@@ -47,6 +48,9 @@ data class UserProfile (
 
     @SerializedName("fullName")
     val fullName: kotlin.String? = null,
+
+    @SerializedName("profileImageUrl")
+    val profileImageUrl: kotlin.String? = null,
 
     @SerializedName("createdAt")
     val createdAt: kotlin.String? = null,

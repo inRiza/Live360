@@ -37,11 +37,17 @@ class CreateFamilyViewModel @Inject constructor(
     }
 
     fun createFamily(familyName: String) {
-        val isNameEmpty = familyName.isBlank()
+        val trimmedName = familyName.trim()
+        val isNameEmpty = trimmedName.isBlank()
 
         // Validasi Input
         if (isNameEmpty) {
             _createState.value = Result.Error("Nama keluarga tidak boleh kosong")
+            return
+        }
+
+        if (trimmedName.length > 50) {
+            _createState.value = Result.Error("Nama keluarga maksimal 50 karakter")
             return
         }
 
@@ -51,11 +57,13 @@ class CreateFamilyViewModel @Inject constructor(
             // URL Icon
             val currentIcon = _selectedIcon.value
             val iconIndex = availableIcons.indexOf(currentIcon)
-            val iconNumber = iconIndex + 1
-            val iconUrl = "https://mad.labpro.hmif.dev/assets/family_icon_" + iconNumber + ".png"
+
+            // Jika iconIndex bernilai -1 (tidak ditemukan), di-fallback ke indeks 0 (nomor 1)
+            val iconNumber = if (iconIndex != -1) iconIndex + 1 else 1
+            val iconUrl = "https://mad.labpro.hmif.dev/assets/family_icon_$iconNumber.png"
 
             // Create Family
-            val result = familyRepository.createFamily(familyName, iconUrl)
+            val result = familyRepository.createFamily(trimmedName, iconUrl)
 
             _createState.value = result
         }

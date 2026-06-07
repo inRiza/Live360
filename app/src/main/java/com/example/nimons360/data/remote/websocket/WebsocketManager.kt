@@ -54,8 +54,11 @@ class WebSocketManager @Inject constructor(
     private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 32)
     val events: SharedFlow<Event> = _events.asSharedFlow()
 
+    private var clientCount = 0
+
     @Synchronized
     fun connect() {
+        clientCount++
         shouldReconnect = true
         if (webSocket != null || isConnecting) return
 
@@ -120,13 +123,17 @@ class WebSocketManager @Inject constructor(
 
     @Synchronized 
     fun disconnect() {
-        shouldReconnect = false
-        reconnectAttempt = 0
-        reconnectJob?.cancel()
-        reconnectJob = null
-        isConnecting = false
-        webSocket?.close(NORMAL_CLOSE_CODE, "Client disconnect")
-        webSocket = null
+        clientCount--
+        if (clientCount <= 0) {
+            clientCount = 0
+            shouldReconnect = false
+            reconnectAttempt = 0
+            reconnectJob?.cancel()
+            reconnectJob = null
+            isConnecting = false
+            webSocket?.close(NORMAL_CLOSE_CODE, "Client disconnect")
+            webSocket = null
+        }
     }
 
     @Synchronized

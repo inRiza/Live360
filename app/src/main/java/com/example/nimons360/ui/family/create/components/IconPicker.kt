@@ -11,9 +11,10 @@ import com.google.android.material.card.MaterialCardView
 
 class IconPickerAdapter(
     private val icons: List<Int>,
+    initialSelectedIconId: Int,
     private val onIconSelected: (Int) -> Unit
 ) : RecyclerView.Adapter<IconPickerAdapter.IconViewHolder>() {
-    private var selectedPosition = 0
+    private var selectedPosition = icons.indexOf(initialSelectedIconId).takeIf { it >= 0 } ?: 0
 
     inner class IconViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val ivIcon: ImageView = itemView.findViewById(R.id.ivIcon)

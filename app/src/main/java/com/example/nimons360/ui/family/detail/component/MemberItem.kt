@@ -3,6 +3,7 @@ package com.example.nimons360.ui.family.detail.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
@@ -17,7 +18,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.nimons360.ui.theme.Orange50
 import com.example.nimons360.ui.theme.Orange800
+import com.example.nimons360.ui.theme.Blue600
 import com.example.nimons360.ui.theme.Nimons360Theme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 
 @Composable
 fun MemberItem(
@@ -26,7 +34,10 @@ fun MemberItem(
     initial: String,
     avatarColor: Color,
     isBlurred: Boolean = false,
-    isYou: Boolean = false
+    isYou: Boolean = false,
+    showGreet: Boolean = false,
+    profileImageUrl: String? = null,
+    onGreet: () -> Unit = {}
 ) {
     // Blurring State
     val rowModifier = Modifier
@@ -39,18 +50,37 @@ fun MemberItem(
         modifier = rowModifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Foto Profil (pake inisial)
+        // Foto Profil (pake image kalo ada, atau inisial kalo ga ada)
         Box(
             modifier = Modifier
                 .size(45.dp)
                 .background(avatarColor, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = initial,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
+            val imageUrl = if (profileImageUrl?.startsWith("http") == true) {
+                profileImageUrl
+            } else if (!profileImageUrl.isNullOrBlank()) {
+                "${com.example.nimons360.utils.Constants.BASE_URL}${profileImageUrl}"
+            } else {
+                null
+            }
+
+            if (imageUrl != null) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = "Profile Photo",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(
+                    text = initial,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
         // Informasi Teks
@@ -79,6 +109,20 @@ fun MemberItem(
                     color = Orange800,
                     fontSize = 10.sp,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                )
+            }
+        }
+
+        if (showGreet) {
+            IconButton(
+                onClick = onGreet,
+                modifier = Modifier.size(36.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Send,
+                    contentDescription = "Greet",
+                    tint = Blue600,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

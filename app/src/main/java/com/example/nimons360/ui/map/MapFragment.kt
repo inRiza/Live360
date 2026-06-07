@@ -30,6 +30,32 @@ class MapFragment : Fragment() {
 		}
 	}
 
+	override fun onResume() {
+		super.onResume()
+		if (hasLocationPermission()) {
+			com.example.nimons360.service.LocationForegroundService.start(requireContext())
+		}
+	}
+
+	override fun onDestroy() {
+		val changingConfig = activity?.isChangingConfigurations ?: false
+		if (!changingConfig) {
+			com.example.nimons360.service.LocationForegroundService.stop(requireContext())
+		}
+		super.onDestroy()
+	}
+
+	private fun hasLocationPermission(): Boolean {
+		return androidx.core.content.ContextCompat.checkSelfPermission(
+			requireContext(),
+			android.Manifest.permission.ACCESS_FINE_LOCATION
+		) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+				androidx.core.content.ContextCompat.checkSelfPermission(
+					requireContext(),
+					android.Manifest.permission.ACCESS_COARSE_LOCATION
+				) == android.content.pm.PackageManager.PERMISSION_GRANTED
+	}
+
 	@Composable
 	private fun MapComposeContent() {
 		MaterialTheme {
