@@ -93,4 +93,7 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("org.maplibre.gl:android-sdk:11.8.3")
     implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("net.zetetic:android-database-sqlcipher:4.5.4")
+    implementation("androidx.sqlite:sqlite:2.4.0")
 }

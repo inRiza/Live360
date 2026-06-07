@@ -38,7 +38,7 @@ class PinDownloadService : Service() {
 
         // Broadcast actions
         const val ACTION_PIN_DOWNLOAD_PROGRESS = "com.example.nimons360.ACTION_PIN_DOWNLOAD_PROGRESS"
-        
+
         // Extras
         const val EXTRA_PIN_ID = "extra_pin_id"
         const val EXTRA_PIN_NAME = "extra_pin_name"
@@ -110,7 +110,9 @@ class PinDownloadService : Service() {
             val inputStream = body.byteStream()
 
             val dir = File(filesDir, "custom_pins").apply { mkdirs() }
-            val destFile = File(dir, "${pinId}.png")
+
+            val relativeFilename = "custom_pins/${pinId}.png"
+            val destFile = File(filesDir, relativeFilename)
             val outputStream = FileOutputStream(destFile)
 
             val buffer = ByteArray(4096)
@@ -133,7 +135,7 @@ class PinDownloadService : Service() {
 
             // Success
             val finalPath = destFile.absolutePath
-            pinPreference.saveDownloadedPin(pinId, finalPath)
+            pinPreference.saveDownloadedPinFilename(pinId, relativeFilename)
             sendBroadcastUpdate(pinId, 100, "success", finalPath)
         } catch (e: Exception) {
             sendBroadcastUpdate(pinId, 0, "error", errorMsg = e.localizedMessage)

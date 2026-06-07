@@ -16,36 +16,43 @@ class PinPreference @Inject constructor(
         private const val PREFS_NAME = "nimons360_pin_prefs"
         private const val KEY_PIN_BIASA = "custom_pin_biasa"
         private const val KEY_PIN_FAVORITE = "custom_pin_favorite"
-        private const val PREFIX_DOWNLOADED = "downloaded_path_"
+        private const val PREFIX_DOWNLOADED = "downloaded_filename_"
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun saveCustomPinBiasaPath(path: String?) {
-        prefs.edit { putString(KEY_PIN_BIASA, path) }
+    // Helper untuk mengonstruksi File
+    private fun getSafeFile(filename: String?): File? {
+        if (filename.isNullOrBlank()) return null
+        val safeFile = File(context.filesDir, filename)
+        return if (safeFile.exists()) safeFile else null
+    }
+
+    fun saveCustomPinBiasaFilename(filename: String?) {
+        prefs.edit { putString(KEY_PIN_BIASA, filename) }
     }
 
     fun getCustomPinBiasaPath(): String? {
-        val path = prefs.getString(KEY_PIN_BIASA, null)
-        return if (path != null && File(path).exists()) path else null
+        val filename = prefs.getString(KEY_PIN_BIASA, null)
+        return getSafeFile(filename)?.absolutePath
     }
 
-    fun saveCustomPinFavoritePath(path: String?) {
-        prefs.edit { putString(KEY_PIN_FAVORITE, path) }
+    fun saveCustomPinFavoriteFilename(filename: String?) {
+        prefs.edit { putString(KEY_PIN_FAVORITE, filename) }
     }
 
     fun getCustomPinFavoritePath(): String? {
-        val path = prefs.getString(KEY_PIN_FAVORITE, null)
-        return if (path != null && File(path).exists()) path else null
+        val filename = prefs.getString(KEY_PIN_FAVORITE, null)
+        return getSafeFile(filename)?.absolutePath
     }
 
-    fun saveDownloadedPin(id: String, path: String) {
-        prefs.edit { putString(PREFIX_DOWNLOADED + id, path) }
+    fun saveDownloadedPinFilename(id: String, filename: String) {
+        prefs.edit { putString(PREFIX_DOWNLOADED + id, filename) }
     }
 
     fun getDownloadedPinPath(id: String): String? {
-        val path = prefs.getString(PREFIX_DOWNLOADED + id, null)
-        return if (path != null && File(path).exists()) path else null
+        val filename = prefs.getString(PREFIX_DOWNLOADED + id, null)
+        return getSafeFile(filename)?.absolutePath
     }
 
     fun isPinDownloaded(id: String): Boolean {

@@ -109,7 +109,9 @@ class CustomizePinViewModel @Inject constructor(
             return
         }
 
-        pinPreference.saveCustomPinBiasaPath(pin.localPath)
+        val filename = "custom_pins/${pin.id}.png"
+        pinPreference.saveCustomPinBiasaFilename(filename)
+
         _uiState.update { it.copy(activeBiasaPinId = pin.id) }
         showToast("${pin.name} diterapkan untuk Pin Biasa")
     }
@@ -121,19 +123,21 @@ class CustomizePinViewModel @Inject constructor(
             return
         }
 
-        pinPreference.saveCustomPinFavoritePath(pin.localPath)
+        val filename = "custom_pins/${pin.id}.png"
+        pinPreference.saveCustomPinFavoriteFilename(filename)
+
         _uiState.update { it.copy(activeFavoritePinId = pin.id) }
         showToast("${pin.name} diterapkan untuk Favorite Location")
     }
 
     fun resetBiasa() {
-        pinPreference.saveCustomPinBiasaPath(null)
+        pinPreference.saveCustomPinBiasaFilename(null)
         _uiState.update { it.copy(activeBiasaPinId = null) }
         showToast("Pin Biasa dikembalikan ke default")
     }
 
     fun resetFavorite() {
-        pinPreference.saveCustomPinFavoritePath(null)
+        pinPreference.saveCustomPinFavoriteFilename(null)
         _uiState.update { it.copy(activeFavoritePinId = null) }
         showToast("Favorite Location dikembalikan ke default")
     }
