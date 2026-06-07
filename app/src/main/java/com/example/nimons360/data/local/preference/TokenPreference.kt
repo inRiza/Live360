@@ -12,6 +12,7 @@ class TokenPreference @Inject constructor(
     companion object {
         private const val PREFS_NAME = "nimons360_prefs"
         private const val KEY_TOKEN = "auth_token"
+        private const val KEY_USER_ID = "user_id"
     }
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -23,7 +24,18 @@ class TokenPreference @Inject constructor(
         return prefs.getString(KEY_TOKEN, null)
     }
 
+    fun saveUserId(userId: Int) {
+        prefs.edit { putInt(KEY_USER_ID, userId) }
+    }
+
+    fun getUserId(): Int {
+        return prefs.getInt(KEY_USER_ID, -1)
+    }
+
     fun clear() {
-        prefs.edit { remove(KEY_TOKEN) }
+        prefs.edit { 
+            remove(KEY_TOKEN) 
+            remove(KEY_USER_ID)
+        }
     }
 }

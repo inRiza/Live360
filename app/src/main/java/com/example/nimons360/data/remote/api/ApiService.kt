@@ -2,6 +2,7 @@ package com.example.nimons360.data.remote.api
 
 import com.example.nimons360.data.remote.dto.request.*
 import com.example.nimons360.data.remote.dto.response.*
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -14,6 +15,10 @@ interface ApiService {
 
     @PATCH("api/me")
     suspend fun updateProfile(@Body request: UpdateProfileRequest): Response<ApiMeGet200Response>
+
+    @Multipart
+    @POST("api/me/photo")
+    suspend fun uploadProfilePhoto(@Part photo: MultipartBody.Part): Response<ApiMeGet200Response>
 
     @GET("api/families")
     suspend fun getAllFamilies(): Response<ApiFamiliesGet200Response>
