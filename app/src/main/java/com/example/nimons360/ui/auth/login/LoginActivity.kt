@@ -1,8 +1,12 @@
 package com.example.nimons360.ui.auth.login
 
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -27,6 +31,11 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var btnSignIn: MaterialButton
     private lateinit var tilEmail: TextInputLayout
     private lateinit var tilPassword: TextInputLayout
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        // handled
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +50,7 @@ class LoginActivity : AppCompatActivity() {
 
         setupAction()
         observeViewModel()
+        requestNotificationPermission()
     }
 
     private fun setupAction() {
@@ -111,6 +121,22 @@ class LoginActivity : AppCompatActivity() {
             btnSignIn.isEnabled = true
             etEmail.isEnabled = true
             etPassword.isEnabled = true
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this, 
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    // granted
+                }
+                else -> {
+                    requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
         }
     }
 }

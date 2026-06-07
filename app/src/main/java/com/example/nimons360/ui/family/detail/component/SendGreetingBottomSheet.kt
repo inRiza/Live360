@@ -6,7 +6,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -19,37 +18,33 @@ import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SendMessageBottomSheet(
+fun SendGreetingBottomSheet(
     showSheet: Boolean,
-    familyName: String = "",
+    targetName: String = "",
     onDismiss: () -> Unit,
     onSend: (String) -> Unit
 ) {
     if (!showSheet) return
-    if (showSheet) {
-        val sheetState = rememberModalBottomSheetState()
-        var messageInput by rememberSaveable { mutableStateOf("") 
-    } //responsive
 
     val sheetState = rememberModalBottomSheetState()
     var messageInput by remember { mutableStateOf("") }
 
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-    val quickMessages = when {
+    val greetings = when {
         hour in 5..11 -> listOf(
-            "Good Morning everyone!",
-            "Rise and shine family!",
-            "Have a great day ahead!"
+            "Good Morning${if (targetName.isNotEmpty()) " $targetName" else ""}!",
+            "Rise and shine${if (targetName.isNotEmpty()) " $targetName" else ""}!",
+            "Have a wonderful morning${if (targetName.isNotEmpty()) " $targetName" else ""}!"
         )
         hour in 12..17 -> listOf(
-            "Good Afternoon everyone!",
-            "Hope you're all doing well!",
-            "Keep up the great work!"
+            "Good Afternoon${if (targetName.isNotEmpty()) " $targetName" else ""}!",
+            "Hope your day is going well${if (targetName.isNotEmpty()) " $targetName" else ""}!",
+            "Keep it up${if (targetName.isNotEmpty()) " $targetName" else ""}!"
         )
         else -> listOf(
-            "Good Night everyone!",
-            "Sweet dreams family!",
-            "Rest well tonight!"
+            "Good Night${if (targetName.isNotEmpty()) " $targetName" else ""}!",
+            "Sweet dreams${if (targetName.isNotEmpty()) " $targetName" else ""}!",
+            "Rest well${if (targetName.isNotEmpty()) " $targetName" else ""}!"
         )
     }
 
@@ -65,14 +60,14 @@ fun SendMessageBottomSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "Send Message",
+                text = "Send Greeting",
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
 
-            if (familyName.isNotEmpty()) {
+            if (targetName.isNotEmpty()) {
                 Text(
-                    text = "To: $familyName",
+                    text = "To: $targetName",
                     fontSize = 13.sp,
                     color = Grey600,
                     modifier = Modifier.padding(top = 2.dp)
@@ -81,9 +76,9 @@ fun SendMessageBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // quick message chips
+            // quick greeting chips
             Text(
-                text = "Quick messages",
+                text = "Quick greetings",
                 fontSize = 13.sp,
                 color = Grey600,
                 fontWeight = FontWeight.Medium
@@ -95,10 +90,10 @@ fun SendMessageBottomSheet(
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                quickMessages.forEach { msg ->
+                greetings.forEach { greeting ->
                     SuggestionChip(
-                        onClick = { messageInput = msg },
-                        label = { Text(msg, fontSize = 12.sp) },
+                        onClick = { messageInput = greeting },
+                        label = { Text(greeting, fontSize = 12.sp) },
                         colors = SuggestionChipDefaults.suggestionChipColors(
                             containerColor = Blue100,
                             labelColor = Blue600
@@ -116,7 +111,7 @@ fun SendMessageBottomSheet(
             OutlinedTextField(
                 value = messageInput,
                 onValueChange = { messageInput = it },
-                label = { Text("Message") },
+                label = { Text("Greeting message") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5,

@@ -34,12 +34,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
+import coil.compose.AsyncImage
 import com.example.nimons360.ui.map.MemberMapUi
 import com.example.nimons360.ui.theme.Blue100
 import com.example.nimons360.ui.theme.Blue600
@@ -51,6 +53,7 @@ import com.example.nimons360.ui.theme.Grey600
 import com.example.nimons360.ui.theme.Grey900
 import com.example.nimons360.ui.theme.Red600
 import com.example.nimons360.ui.theme.White
+import com.example.nimons360.utils.Constants
 import java.util.Locale
 
 @Composable
@@ -135,6 +138,7 @@ fun UserMarkerOverlay(
 
 		currentUser?.let { user ->
 			val avatarBadgeColor = currentUserMarkerColor?.let { Color(it) } ?: Blue600
+			val profileImageUrl = resolveProfileImageUrl(user.profileImageUrl)
 			Box(
 				modifier = Modifier
 					.fillMaxWidth()
@@ -148,25 +152,36 @@ fun UserMarkerOverlay(
 					Row(verticalAlignment = Alignment.CenterVertically) {
 						Box(
 							modifier = Modifier
+								.size(44.dp)
 								.clip(CircleShape)
-								.background(avatarBadgeColor)
-								.size(44.dp),
+								.background(avatarBadgeColor),
 							contentAlignment = Alignment.Center
 						) {
-							Text(
-								text = user.fullName
-									.trim()
-									.split(" ")
-									.filter { it.isNotBlank() }
-									.take(2)
-									.joinToString("") { it.first().uppercase() }
-									.ifBlank { "?" },
-										color = White,
-								fontWeight = FontWeight.Bold,
-								fontSize = 16.sp,
-								textAlign = TextAlign.Center,
-								modifier = Modifier.width(44.dp)
-							)
+							if (profileImageUrl != null) {
+								AsyncImage(
+									model = profileImageUrl,
+									contentDescription = "Foto profil ${user.fullName}",
+									contentScale = ContentScale.Crop,
+									modifier = Modifier
+										.size(44.dp)
+										.clip(CircleShape)
+								)
+							} else {
+								Text(
+									text = user.fullName
+										.trim()
+										.split(" ")
+										.filter { it.isNotBlank() }
+										.take(2)
+										.joinToString("") { it.first().uppercase() }
+										.ifBlank { "?" },
+									color = White,
+									fontWeight = FontWeight.Bold,
+									fontSize = 16.sp,
+									textAlign = TextAlign.Center,
+									modifier = Modifier.width(44.dp)
+								)
+							}
 						}
 						Spacer(modifier = Modifier.width(10.dp))
 						Column {
@@ -261,6 +276,11 @@ private fun internetStatusLabel(status: String): String {
 		"mobile" -> "Mobile"
 		else -> status
 	}
+}
+
+private fun resolveProfileImageUrl(url: String?): String? {
+	if (url.isNullOrBlank()) return null
+	return if (url.startsWith("http")) url else "${Constants.BASE_URL}$url"
 }
 
 @Composable

@@ -45,11 +45,14 @@ import com.example.nimons360.ui.theme.Red600
 import com.example.nimons360.ui.theme.White
 import com.example.nimons360.utils.Result
 
+
 @Composable
 fun FamilyDetailScreen(
     viewModel: FamilyDetailViewModel,
     familyId: Int,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSendMessage: (familyId: Int, familyName: String) -> Unit = { _, _ ->},
+    onSendGreeting: (familyId: Int, targetUserId: Int, targetName: String) -> Unit = { _, _, _ ->}
 ) {
     // State Data
     val detailState by viewModel.familyDetailState.collectAsState()
@@ -105,6 +108,8 @@ fun FamilyDetailScreen(
             onBack = onBack,
             onJoinFamily = { code -> viewModel.joinFamily(code) },
             onLeaveFamily = { viewModel.leaveFamily() },
+            onSendMessage = { message -> viewModel.sendFamilyNotification(familyId, message) },
+            onSendGreeting = { memberId, message -> viewModel.sendGreeting(familyId, memberId, message) },
             onShareFamilyLink = {
                 // Android Share Sheet
                 val shareMessage = "Ayo bergabung dengan keluarga ${family.name} di Nimons360!\nKlik link berikut untuk bergabung:\n\nnimons360://family/${family.id}?code=${family.familyCode}"
@@ -134,12 +139,15 @@ fun FamilyDetailContent(
     onBack: () -> Unit,
     onJoinFamily: (String) -> Unit,
     onLeaveFamily: () -> Unit,
+    onSendMessage: (message: String) -> Unit = {},
+    onSendGreeting: (memberId: Int, message: String) -> Unit = { _, _ -> },
     onShareFamilyLink: () -> Unit
 ) {
     // State Dialog & Bottom Sheet
-    var showJoinDialog by rememberSaveable { mutableStateOf(false) }
-    var showLeaveDialog by rememberSaveable { mutableStateOf(false) }
-    var showSendMessageSheet by rememberSaveable { mutableStateOf(false) }
+    var showJoinDialog by remember { mutableStateOf(false) }
+    var showLeaveDialog by remember { mutableStateOf(false) }
+    var showSendMessageSheet by remember { mutableStateOf(false) }
+    var greetTarget by remember { mutableStateOf<Pair<Int, String>?>(null) }
 
     // Orientasi Layar
     val configuration = LocalConfiguration.current
@@ -396,32 +404,34 @@ fun FamilyDetailContent(
                         Spacer(modifier = Modifier.height(20.dp))
                     }
 
-                    Text(
-                        text = "Members",
-                        color = Grey600,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
+                // Daftar Anggota
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    val avaColors = listOf(Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFE91E63), Color(0xFFFF9800))
+                    items(members.withIndex().toList()) { (index, member) ->
+                        val name = member.fullName ?: "Unknown"
+                        val email = member.email ?: "**********"
+                        val memberId = member.id
 
-                    // Daftar Anggota
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        val avaColors = listOf(Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFE91E63), Color(0xFFFF9800))
-                        items(members.withIndex().toList()) { (index, member) ->
-                            val name = member.fullName ?: "Unknown"
-                            val email = member.email ?: "**********"
-                            MemberItem(
-                                name = name,
-                                email = email,
-                                initial = name.trim().split(" ")
-                                    .filter { it.isNotEmpty() }
-                                    .map { it[0].uppercaseChar() }
-                                    .take(2)
-                                    .joinToString(""),
-                                avatarColor = avaColors[index % avaColors.size],
-                                isBlurred = !isJoined,
-                                isYou = (email == currentUserEmail)
-                            )
-                        }
+                        MemberItem(
+                            name = name,
+                            email = email,
+                            initial = name.trim().split(" ")
+                                .filter { it.isNotEmpty() }
+                                .map { it[0].uppercaseChar() }
+                                .take(2)
+                                .joinToString(""),
+                            avatarColor = avaColors[index % avaColors.size],
+                            isBlurred = !isJoined,
+                            isYou = (email == currentUserEmail),
+                            showGreet = isJoined && email != currentUserEmail && memberId != null,
+                            profileImageUrl = member.profileImageUrl,
+                            onGreet = {
+                                if (memberId != null) {
+                                    greetTarget = Pair(memberId, name)
+                                }
+                            }
+
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -523,50 +533,60 @@ fun FamilyDetailContent(
 
     SendMessageBottomSheet(
         showSheet = showSendMessageSheet,
+        familyName = familyName,
         onDismiss = { showSendMessageSheet = false },
+        onSend = { message -> onSendMessage(message) }
+    )
+
+    SendGreetingBottomSheet(
+        showSheet = greetTarget != null,
+        targetName = greetTarget?.second ?: "",
+        onDismiss = { greetTarget = null },
         onSend = { message ->
-            // TODO: Implementasi kirim pesan
+            greetTarget?.let { (memberId, _) ->
+                onSendGreeting(memberId, message)
+            }
         }
     )
 }
 
-// Preview Layar
-@Preview(showBackground = true, name = "1. Belum Bergabung")
-@Composable
-fun FamilyDetailNotJoinedPreview() {
-    Nimons360Theme {
-        FamilyDetailContent(
-            familyName = "Keluarga Cemara",
-            memberCount = 4,
-            iconUrl = "",
-            isJoined = false,
-            familyCode = "XXXXXX",
-            members = emptyList(),
-            currentUserEmail = null,
-            onBack = {},
-            onJoinFamily = {},
-            onLeaveFamily = {},
-            onShareFamilyLink = {}
-        )
-    }
-}
+// // Preview Layar
+// @Preview(showBackground = true, name = "1. Belum Bergabung")
+// @Composable
+// fun FamilyDetailNotJoinedPreview() {
+//     Nimons360Theme {
+//         FamilyDetailContent(
+//             familyName = "Keluarga Cemara",
+//             memberCount = 4,
+//             iconUrl = "",
+//             isJoined = false,
+//             familyCode = "XXXXXX",
+//             members = emptyList(),
+//             currentUserEmail = null,
+//             onBack = {},
+//             onJoinFamily = {},
+//             onLeaveFamily = {},
+//             onShareFamilyLink = {}
+//         )
+//     }
+// }
 
-@Preview(showBackground = true, name = "2. Sudah Bergabung")
-@Composable
-fun FamilyDetailJoinedPreview() {
-    Nimons360Theme {
-        FamilyDetailContent(
-            familyName = "Keluarga Cemara",
-            memberCount = 4,
-            iconUrl = "",
-            isJoined = true,
-            familyCode = "MFA287",
-            members = emptyList(),
-            currentUserEmail = null,
-            onBack = {},
-            onJoinFamily = {},
-            onLeaveFamily = {},
-            onShareFamilyLink = {}
-        )
-    }
-}
+// @Preview(showBackground = true, name = "2. Sudah Bergabung")
+// @Composable
+// fun FamilyDetailJoinedPreview() {
+//     Nimons360Theme {
+//         FamilyDetailContent(
+//             familyName = "Keluarga Cemara",
+//             memberCount = 4,
+//             iconUrl = "",
+//             isJoined = true,
+//             familyCode = "MFA287",
+//             members = emptyList(),
+//             currentUserEmail = null,
+//             onBack = {},
+//             onJoinFamily = {},
+//             onLeaveFamily = {},
+//             onShareFamilyLink = {}
+//         )
+//     }
+// }

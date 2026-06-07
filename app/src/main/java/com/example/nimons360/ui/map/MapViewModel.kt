@@ -1,5 +1,6 @@
 package com.example.nimons360.ui.map
 
+
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -37,12 +38,14 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import java.util.Locale
 
+
 private const val MEMBER_TIMEOUT_MS = 5_000L
 private const val PRESENCE_PUBLISH_INTERVAL_MS = 1_000L
 private const val PING_INTERVAL_MS = 15_000L
 private const val FAVORITE_PREF_NAME = "map_favorite_locations"
 private const val FAVORITE_PREF_KEY = "favorite_locations_json"
 private const val PROFILE_AVATAR_BLUE = 0xFF2196F3.toInt()
+
 
 private val userColorPalette = listOf(
     0xFF4CAF50.toInt(),
@@ -54,6 +57,7 @@ private val userColorPalette = listOf(
     0xFF795548.toInt()
 )
 
+
 private val familyColorPalette = listOf(
     0xFF0B3D91.toInt(),
     0xFF2E7D32.toInt(),
@@ -63,6 +67,7 @@ private val familyColorPalette = listOf(
     0xFF00695C.toInt(),
     0xFF455A64.toInt()
 )
+
 
 data class MemberMapUi(
     val id: String,
@@ -77,14 +82,17 @@ data class MemberMapUi(
     val internetStatus: String,
     val isCurrentUser: Boolean,
     val familyIds: Set<Int> = emptySet(),
-    val lastUpdatedAt: Long
+    val lastUpdatedAt: Long,
+    val profileImageUrl: String? = null
 )
+
 
 data class FamilyFilterOption(
     val id: Int?,
     val name: String,
     val color: Int
 )
+
 
 /** State used to drive the Add/Edit marked location bottom sheet */
 data class AddEditMarkedLocationState(
@@ -97,11 +105,13 @@ data class AddEditMarkedLocationState(
     val newPhotoPaths: List<String> = emptyList()        // newly picked/captured photos
 )
 
+
 data class MapLongPressState(
     val latitude: Double,
     val longitude: Double,
     val address: String = "Memuat alamat..."
 )
+
 
 data class MapUiState(
     val hasLocationPermission: Boolean = false,
@@ -127,6 +137,7 @@ data class MapUiState(
     val errorMessage: String? = null
 )
 
+
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val userRepository: UserRepository,
@@ -138,29 +149,37 @@ class MapViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
+
     private val gson = Gson()
     private val favoritesPref = appContext.getSharedPreferences(FAVORITE_PREF_NAME, Context.MODE_PRIVATE)
 
+
     private val remoteMemberStore = linkedMapOf<String, MemberMapUi>()
+
 
     private var currentLatitude: Double? = null
     private var currentLongitude: Double? = null
     private var currentRotation: Float = 0f
     private var lastAcceptedLocationMs: Long = 0L
 
+
     private var currentUserName: String = "You"
     private var currentUserEmail: String = "you@nimons.local"
     private var currentUserId: Int? = null
+    private var currentUserProfileImageUrl: String? = null
     private var myFamilyIds: Set<Int> = emptySet()
     private var isFamilyContextLoaded: Boolean = false
+
 
     private var timeoutCleanupJob: Job? = null
     private var periodicPublishJob: Job? = null
     private var pingJob: Job? = null
 
+
     // Battery state via BroadcastReceiver
     private var batteryLevel: Int = 0
     private var isCharging: Boolean = false
+
 
     private val batteryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -174,8 +193,10 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     private val _uiState = MutableStateFlow(MapUiState())
     val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
+
 
     init {
         // Register battery BroadcastReceiver
@@ -190,6 +211,7 @@ class MapViewModel @Inject constructor(
                     status == BatteryManager.BATTERY_STATUS_FULL
         }
 
+
         loadCurrentUserProfile()
         loadMyFamilies()
         loadFavoriteLocations()
@@ -198,7 +220,9 @@ class MapViewModel @Inject constructor(
         reloadCustomPins()
     }
 
+
     // ─── Marked Locations ────────────────────────────────────────────────────
+
 
     private fun observeMarkedLocations() {
         viewModelScope.launch {
@@ -207,6 +231,7 @@ class MapViewModel @Inject constructor(
             }
         }
     }
+
 
     fun reloadCustomPins() {
         val biasPath = pinPreference.getCustomPinBiasaPath()
@@ -218,6 +243,7 @@ class MapViewModel @Inject constructor(
             )
         }
     }
+
 
     /** Called when user long-presses the map */
     fun onMapLongPressed(latitude: Double, longitude: Double) {
@@ -231,6 +257,7 @@ class MapViewModel @Inject constructor(
             )
         }
 
+
         viewModelScope.launch {
             val geocoder = android.location.Geocoder(appContext, Locale.getDefault())
             var addressText: String = "Alamat tidak tersedia"
@@ -241,6 +268,7 @@ class MapViewModel @Inject constructor(
             }.onFailure {
                 addressText = "Alamat tidak tersedia"
             }
+
 
             _uiState.update { state ->
                 val longPress = state.mapLongPressState ?: return@update state
@@ -253,9 +281,11 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     fun dismissMapLongPress() {
         _uiState.update { it.copy(mapLongPressState = null) }
     }
+
 
     fun selectAddMarkedLocation() {
         val longPress = _uiState.value.mapLongPressState ?: return
@@ -270,11 +300,13 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     fun selectSaveAsFavorite() {
         val longPress = _uiState.value.mapLongPressState ?: return
         _uiState.update { it.copy(mapLongPressState = null) }
         addFavoriteLocation(longPress.latitude, longPress.longitude)
     }
+
 
     /** Called to pre-fill lat/lng with current user location */
     fun useCurrentLocationForMarked() {
@@ -286,12 +318,14 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     fun updateAddEditName(name: String) {
         _uiState.update { state ->
             val sheet = state.addEditMarkedLocation ?: return@update state
             state.copy(addEditMarkedLocation = sheet.copy(name = name))
         }
     }
+
 
     fun updateAddEditDescription(desc: String) {
         _uiState.update { state ->
@@ -300,12 +334,14 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     fun updateAddEditLatitude(lat: Double) {
         _uiState.update { state ->
             val sheet = state.addEditMarkedLocation ?: return@update state
             state.copy(addEditMarkedLocation = sheet.copy(latitude = lat))
         }
     }
+
 
     fun updateAddEditLongitude(lng: Double) {
         _uiState.update { state ->
@@ -314,12 +350,14 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     fun addNewPhotosToAddEdit(paths: List<String>) {
         _uiState.update { state ->
             val sheet = state.addEditMarkedLocation ?: return@update state
             state.copy(addEditMarkedLocation = sheet.copy(newPhotoPaths = sheet.newPhotoPaths + paths))
         }
     }
+
 
     fun removeExistingPhotoFromAddEdit(path: String) {
         _uiState.update { state ->
@@ -328,12 +366,14 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     fun removeNewPhotoFromAddEdit(path: String) {
         _uiState.update { state ->
             val sheet = state.addEditMarkedLocation ?: return@update state
             state.copy(addEditMarkedLocation = sheet.copy(newPhotoPaths = sheet.newPhotoPaths - path))
         }
     }
+
 
     fun saveMarkedLocation() {
         val sheet = _uiState.value.addEditMarkedLocation ?: return
@@ -372,18 +412,22 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     fun dismissAddEditSheet() {
         _uiState.update { it.copy(addEditMarkedLocation = null) }
     }
+
 
     fun onMarkedLocationClicked(id: String) {
         val found = _uiState.value.markedLocations.firstOrNull { it.location.id == id }
         _uiState.update { it.copy(selectedMarkedLocation = found) }
     }
 
+
     fun dismissMarkedLocationDetail() {
         _uiState.update { it.copy(selectedMarkedLocation = null) }
     }
+
 
     fun openEditMarkedLocation(item: MarkedLocationWithPhotos) {
         _uiState.update {
@@ -402,6 +446,7 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     fun deleteMarkedLocation(id: String) {
         viewModelScope.launch {
             markedLocationRepository.delete(id)
@@ -414,7 +459,9 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     // ─── Realtime / WebSocket ────────────────────────────────────────────────
+
 
     fun startRealtime() {
         webSocketManager.connect()
@@ -422,6 +469,7 @@ class MapViewModel @Inject constructor(
         startPresencePublishing()
         startPingLoop()
     }
+
 
     fun stopRealtime() {
         timeoutCleanupJob?.cancel()
@@ -433,18 +481,22 @@ class MapViewModel @Inject constructor(
         webSocketManager.disconnect()
     }
 
+
     fun onLocationPermissionChanged(granted: Boolean) {
         _uiState.update { it.copy(hasLocationPermission = granted) }
     }
+
 
     fun onSearchQueryChanged(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
     }
 
+
     fun onFamilyFilterChanged(familyId: Int?) {
         _uiState.update { it.copy(selectedFamilyId = familyId) }
         recomputeNearbyMembers()
     }
+
 
     fun onCurrentLocationChanged(
         latitude: Double,
@@ -454,13 +506,16 @@ class MapViewModel @Inject constructor(
     ) {
         if (currentLatitude != null && accuracyMeters > 60f) return
 
+
         val prevLat = currentLatitude
         val prevLng = currentLongitude
         if (prevLat != null && prevLng != null) {
             val distance = distanceMeters(prevLat, prevLng, latitude, longitude)
             val deltaMs = (timestampMs - lastAcceptedLocationMs).coerceAtLeast(1L)
 
+
             if (deltaMs < 1500L && distance > 45.0) return
+
 
             val alpha = when {
                 distance < 2.0 -> 0.45
@@ -477,10 +532,12 @@ class MapViewModel @Inject constructor(
         updateCurrentUserMarker()
     }
 
+
     fun onCurrentRotationChanged(rotation: Float) {
         currentRotation = normalizeRotation(rotation)
         updateCurrentUserMarker()
     }
+
 
     fun onMemberMarkerClicked(memberId: String) {
         val selected = (_uiState.value.remoteMembers + listOfNotNull(_uiState.value.currentUser))
@@ -488,17 +545,21 @@ class MapViewModel @Inject constructor(
         _uiState.update { it.copy(selectedMember = selected) }
     }
 
+
     fun dismissMemberSheet() {
         _uiState.update { it.copy(selectedMember = null) }
     }
 
+
     // ─── Favorite Locations (SharedPrefs – unchanged) ─────────────────────
+
 
     fun addFavoriteLocation(latitude: Double, longitude: Double) {
         viewModelScope.launch {
             val geocoder = android.location.Geocoder(appContext, Locale.getDefault())
             var placeName: String = "Favorite ${(uiState.value.favoriteLocations.size + 1)}"
             var addressText: String = "Address unavailable"
+
 
             runCatching {
                 val addresses = geocoder.getFromLocation(latitude, longitude, 1)
@@ -512,6 +573,7 @@ class MapViewModel @Inject constructor(
                 placeName = "Favorite ${(uiState.value.favoriteLocations.size + 1)}"
                 addressText = "Address unavailable"
             }
+
 
             val favorite = FavoriteLocationDto(
                 id = "fav-${System.currentTimeMillis()}",
@@ -529,18 +591,22 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     fun toggleFavoritesPanel() {
         _uiState.update { it.copy(isFavoritesPanelVisible = !it.isFavoritesPanelVisible) }
     }
+
 
     fun focusFavoriteLocation(id: String) {
         _uiState.update { it.copy(focusedFavoriteLocationId = id) }
     }
 
+
     fun consumeFocusedFavorite() {
         if (_uiState.value.focusedFavoriteLocationId == null) return
         _uiState.update { it.copy(focusedFavoriteLocationId = null) }
     }
+
 
     fun removeFavoriteLocation(id: String) {
         val updated = _uiState.value.favoriteLocations.filterNot { it.id == id }
@@ -553,7 +619,6 @@ class MapViewModel @Inject constructor(
         saveFavoriteLocations(updated)
     }
 
-    // ─── Private helpers ─────────────────────────────────────────────────────
 
     private fun loadCurrentUserProfile() {
         viewModelScope.launch {
@@ -564,6 +629,7 @@ class MapViewModel @Inject constructor(
                     currentUserEmail = profile?.email.orEmpty().ifBlank { "you@nimons.local" }
                     currentUserId = profile?.id
                     tokenPreference.saveUserName(currentUserName)
+                    currentUserProfileImageUrl = profile?.profileImageUrl
                 }
                 is Result.Error -> {
                     _uiState.update { it.copy(errorMessage = result.message) }
@@ -573,9 +639,11 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     fun clearErrorMessage() {
         _uiState.update { it.copy(errorMessage = null) }
     }
+
 
     private fun observeWebSocketEvents() {
         viewModelScope.launch {
@@ -610,12 +678,15 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     private fun handleIncomingPresence(payload: MemberPresencePayload) {
         if (currentUserId != null && payload.userId == currentUserId) return
+
 
         val incomingEmail = payload.extractEmail()
         if (incomingEmail.equals(currentUserEmail, ignoreCase = true)) return
         if (!sharesFamilyWithCurrentUser(payload)) return
+
 
         val now = System.currentTimeMillis()
         val memberId = memberIdFrom(payload.userId, incomingEmail)
@@ -640,15 +711,19 @@ class MapViewModel @Inject constructor(
         publishRemoteMembersState()
     }
 
+
     private fun sharesFamilyWithCurrentUser(payload: MemberPresencePayload): Boolean {
         if (!isFamilyContextLoaded) return true
         if (myFamilyIds.isEmpty()) return true
 
+
         val peerFamilyIds = payload.extractFamilyIdsFromMetadata()
         if (peerFamilyIds.isEmpty()) return true
 
+
         return peerFamilyIds.any { it in myFamilyIds }
     }
+
 
     private fun startMemberTimeoutCleanup() {
         if (timeoutCleanupJob != null) return
@@ -659,6 +734,7 @@ class MapViewModel @Inject constructor(
                 val removedIds = remoteMemberStore
                     .filterValues { now - it.lastUpdatedAt > MEMBER_TIMEOUT_MS }
                     .keys
+
 
                 if (removedIds.isNotEmpty()) {
                     removedIds.forEach { remoteMemberStore.remove(it) }
@@ -671,6 +747,7 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     private fun startPresencePublishing() {
         if (periodicPublishJob != null) return
         periodicPublishJob = viewModelScope.launch {
@@ -680,6 +757,7 @@ class MapViewModel @Inject constructor(
             }
         }
     }
+
 
     private fun startPingLoop() {
         if (pingJob != null) return
@@ -691,11 +769,13 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     private fun publishCurrentPresence() {
         if (!_uiState.value.isWsConnected) return
         val lat = currentLatitude ?: return
         val lng = currentLongitude ?: return
         val networkStatus = readNetworkStatus()
+
 
         webSocketManager.sendPresence(
             UpdatePresencePayload(
@@ -711,11 +791,13 @@ class MapViewModel @Inject constructor(
                     "userId" to (currentUserId?.toString() ?: ""),
                     "familyIds" to myFamilyIds.sorted(),
                     "familyCount" to myFamilyIds.size,
-                    "source" to "android"
+                    "source" to "android",
+                    "profileImageUrl" to (currentUserProfileImageUrl ?: "")
                 )
             )
         )
     }
+
 
     private fun loadMyFamilies() {
         viewModelScope.launch {
@@ -755,10 +837,12 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     private fun updateCurrentUserMarker() {
         val lat = currentLatitude ?: return
         val lng = currentLongitude ?: return
         val networkStatus = readNetworkStatus()
+
 
         val current = MemberMapUi(
             id = memberIdFrom(currentUserId, currentUserEmail),
@@ -773,11 +857,13 @@ class MapViewModel @Inject constructor(
             internetStatus = networkStatus,
             isCurrentUser = true,
             familyIds = myFamilyIds,
-            lastUpdatedAt = System.currentTimeMillis()
+            lastUpdatedAt = System.currentTimeMillis(),
+            profileImageUrl = currentUserProfileImageUrl
         )
         _uiState.update { it.copy(currentUser = current) }
         recomputeNearbyMembers()
     }
+
 
     private fun publishRemoteMembersState() {
         _uiState.update {
@@ -785,6 +871,7 @@ class MapViewModel @Inject constructor(
         }
         recomputeNearbyMembers()
     }
+
 
     private fun recomputeNearbyMembers() {
         val state = _uiState.value
@@ -796,13 +883,16 @@ class MapViewModel @Inject constructor(
             .sortedBy { (_, distance) -> distance }
             .map { (member, _) -> member }
 
+
         _uiState.update { it.copy(nearbyMembers = nearby) }
     }
+
 
     private fun memberMatchesSelectedFamily(member: MemberMapUi, selectedFamilyId: Int?): Boolean {
         if (selectedFamilyId == null) return true
         return selectedFamilyId in member.familyIds
     }
+
 
     private fun distanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val results = FloatArray(1)
@@ -810,9 +900,11 @@ class MapViewModel @Inject constructor(
         return results[0].toDouble()
     }
 
+
     private fun loadFavoriteLocations() {
         val raw = favoritesPref.getString(FAVORITE_PREF_KEY, null)
         if (raw.isNullOrBlank()) return
+
 
         runCatching {
             val root = JsonParser.parseString(raw)
@@ -835,15 +927,18 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     private fun saveFavoriteLocations(locations: List<FavoriteLocationDto>) {
         val raw = gson.toJson(locations)
         favoritesPref.edit().putString(FAVORITE_PREF_KEY, raw).apply()
     }
 
+
     private fun readNetworkStatus(): String {
         val cm = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = cm.activeNetwork ?: return "mobile"
         val caps = cm.getNetworkCapabilities(network) ?: return "mobile"
+
 
         return when {
             caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
@@ -851,15 +946,18 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     private fun memberIdFrom(userId: Int?, email: String): String {
         val safeEmail = email.ifBlank { "unknown" }
         return "${userId ?: -1}:$safeEmail"
     }
 
+
     private fun MemberPresencePayload.extractEmail(): String {
         if (email.isNotBlank()) return email
         return (metadata["email"] as? String).orEmpty()
     }
+
 
     private fun MemberPresencePayload.extractFamilyIdsFromMetadata(): Set<Int> {
         val idsFromList = (metadata["familyIds"] as? List<*>)
@@ -874,7 +972,9 @@ class MapViewModel @Inject constructor(
             .filter { it > 0 }
             .toSet()
 
+
         if (idsFromList.isNotEmpty()) return idsFromList
+
 
         val single = when (val familyId = metadata["familyId"]) {
             is Number -> familyId.toInt()
@@ -884,11 +984,13 @@ class MapViewModel @Inject constructor(
         return if (single != null && single > 0) setOf(single) else emptySet()
     }
 
+
     private fun MemberPresencePayload.toMapUi(now: Long): MemberMapUi {
         val safeEmail = email.ifBlank {
             (metadata["email"] as? String).orEmpty()
         }
         val safeName = fullName.ifBlank { (metadata["fullName"] as? String).orEmpty().ifBlank { "Unknown" } }
+        val profileImageUrl = (metadata["profileImageUrl"] as? String)?.takeIf { it.isNotBlank() }
         return MemberMapUi(
             id = memberIdFrom(userId, safeEmail),
             userId = userId,
@@ -902,20 +1004,24 @@ class MapViewModel @Inject constructor(
             internetStatus = internetStatus.ifBlank { "mobile" },
             isCurrentUser = false,
             familyIds = extractFamilyIdsFromMetadata(),
-            lastUpdatedAt = now
+            lastUpdatedAt = now,
+            profileImageUrl = profileImageUrl
         )
     }
+
 
     private fun familyColorFor(familyId: Int): Int {
         val index = kotlin.math.abs(familyId) % familyColorPalette.size
         return familyColorPalette[index]
     }
 
+
     private fun userColorFor(member: MemberMapUi): Int {
         val key = member.email.ifBlank { member.id }
         val hash = kotlin.math.abs(key.hashCode())
         return userColorPalette[hash % userColorPalette.size]
     }
+
 
     fun resolveMarkerColor(member: MemberMapUi): Int {
         val state = _uiState.value
@@ -927,16 +1033,19 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
     private fun normalizeRotation(value: Float): Float {
         var result = value % 360f
         if (result < 0f) result += 360f
         return result
     }
 
+
     private fun smoothRotation(previous: Float, target: Float, alpha: Float): Float {
         val shortestDelta = (((target - previous + 540f) % 360f) - 180f)
         return normalizeRotation(previous + shortestDelta * alpha)
     }
+
 
     override fun onCleared() {
         appContext.unregisterReceiver(batteryReceiver)
@@ -944,3 +1053,6 @@ class MapViewModel @Inject constructor(
         super.onCleared()
     }
 }
+
+
+
