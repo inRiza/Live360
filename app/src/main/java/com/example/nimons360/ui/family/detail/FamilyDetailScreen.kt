@@ -1,11 +1,15 @@
 package com.example.nimons360.ui.family.detail
 
+import android.content.Intent
+import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
@@ -13,17 +17,18 @@ import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.content.Intent
 import coil.compose.AsyncImage
 import com.example.nimons360.data.remote.dto.common.FamilyDetailResponseMembersInner
 import com.example.nimons360.ui.family.detail.component.*
@@ -144,6 +149,10 @@ fun FamilyDetailContent(
     var showSendMessageSheet by remember { mutableStateOf(false) }
     var greetTarget by remember { mutableStateOf<Pair<Int, String>?>(null) }
 
+    // Orientasi Layar
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     Scaffold(
         containerColor = Grey50
     ) { padding ->
@@ -173,77 +182,227 @@ fun FamilyDetailContent(
                 )
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 20.dp)
-            ) {
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Card Informasi Keluarga
-                Card(
-                    shape = RoundedCornerShape(22.dp),
-                    colors = CardDefaults.cardColors(containerColor = White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            if (isLandscape) {
+                // LAYOUT LANDSCAPE (2 Kolom)
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Kolom Kiri: Informasi, Kode, & Manajemen Aksi
+                    Column(
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState())
+                            .padding(end = 10.dp)
                     ) {
-                        // Menampilkan Icon Keluarga menggunakan Coil
-                        Box(
-                            modifier = Modifier
-                                .size(54.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Blue100),
-                            contentAlignment = Alignment.Center
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Card(
+                            shape = RoundedCornerShape(22.dp),
+                            colors = CardDefaults.cardColors(containerColor = White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            AsyncImage(
-                                model = iconUrl,
-                                contentDescription = "Family Icon",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(8.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Grey100),
-                                contentScale = ContentScale.Crop
-                            )
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(54.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(Blue100),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    AsyncImage(
+                                        model = iconUrl,
+                                        contentDescription = "Family Icon",
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(8.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(Grey100),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(15.dp))
+                                Column {
+                                    Text(
+                                        text = familyName,
+                                        color = Grey900,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 20.sp
+                                    )
+                                    Text(
+                                        text = "$memberCount members",
+                                        color = Grey600,
+                                        fontSize = 15.sp
+                                    )
+                                }
+                            }
                         }
 
-                        Spacer(modifier = Modifier.width(15.dp))
+                        Spacer(modifier = Modifier.height(15.dp))
 
-                        Column {
+                        if (isJoined) {
+                            FamilyCodeSection(code = familyCode)
+                            Spacer(modifier = Modifier.height(15.dp))
                             Text(
-                                text = familyName,
-                                color = Grey900,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp
-                            )
-                            Text(
-                                text = "$memberCount members",
+                                text = "Actions",
                                 color = Grey600,
-                                fontSize = 15.sp
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
                             )
+                            ActionItem(
+                                icon = Icons.Default.Message,
+                                text = "Send Message",
+                                onClick = { showSendMessageSheet = true }
+                            )
+                            ActionItem(
+                                icon = Icons.Default.Share,
+                                text = "Share Family Link",
+                                onClick = onShareFamilyLink
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Button(
+                                onClick = { showLeaveDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Red600, contentColor = White),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth().height(52.dp).padding(bottom = 15.dp)
+                            ) {
+                                Text("Leave Family")
+                            }
+                        } else {
+                            Surface(
+                                color = Orange50,
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(modifier = Modifier.padding(10.dp)) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = Orange600,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        text = "Join this family to see member details and map interaction.",
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+                            Button(
+                                onClick = { showJoinDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Blue600, contentColor = White),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 15.dp).height(52.dp)
+                            ) {
+                                Text("Join Family")
+                            }
+                        }
+                    }
+
+                    // Kolom Kanan: Judul Members dan Scrollable List Anggota
+                    Column(
+                        modifier = Modifier
+                            .weight(0.8f)
+                            .fillMaxHeight()
+                            .padding(start = 10.dp)
+                    ) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Members",
+                            color = Grey600,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            val avaColors = listOf(Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFE91E63), Color(0xFFFF9800))
+                            items(members.withIndex().toList()) { (index, member) ->
+                                val name = member.fullName ?: "Unknown"
+                                val email = member.email ?: "**********"
+                                MemberItem(
+                                    name = name,
+                                    email = email,
+                                    initial = name.trim().split(" ")
+                                        .filter { it.isNotEmpty() }
+                                        .map { it[0].uppercaseChar() }
+                                        .take(2)
+                                        .joinToString(""),
+                                    avatarColor = avaColors[index % avaColors.size],
+                                    isBlurred = !isJoined,
+                                    isYou = (email == currentUserEmail)
+                                )
+                            }
                         }
                     }
                 }
+            } else {
+                // LAYOUT PORTRAIT
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp)
+                ) {
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                Spacer(modifier = Modifier.height(20.dp))
+                    // Card Informasi Keluarga
+                    Card(
+                        shape = RoundedCornerShape(22.dp),
+                        colors = CardDefaults.cardColors(containerColor = White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Blue100),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                AsyncImage(
+                                    model = iconUrl,
+                                    contentDescription = "Family Icon",
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(8.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Grey100),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(15.dp))
+                            Column {
+                                Text(
+                                    text = familyName,
+                                    color = Grey900,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp
+                                )
+                                Text(
+                                    text = "$memberCount members",
+                                    color = Grey600,
+                                    fontSize = 15.sp
+                                )
+                            }
+                        }
+                    }
 
-                // Kode Join Keluarga
-                if (isJoined) {
-                    FamilyCodeSection(code = familyCode)
                     Spacer(modifier = Modifier.height(20.dp))
-                }
 
-                Text(
-                    text = "Members",
-                    color = Grey600,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
+                    // Kode Join Keluarga
+                    if (isJoined) {
+                        FamilyCodeSection(code = familyCode)
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
 
                 // Daftar Anggota
                 LazyColumn(modifier = Modifier.weight(1f)) {
@@ -274,76 +433,76 @@ fun FamilyDetailContent(
 
                         )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                // Action Items
-                if (isJoined) {
+                    // Action Items
+                    if (isJoined) {
+                        ActionItem(
+                            icon = Icons.Default.Message,
+                            text = "Send Message",
+                            onClick = { showSendMessageSheet = true }
+                        )
+                    }
+
                     ActionItem(
-                        icon = Icons.Default.Message,
-                        text = "Send Message",
-                        onClick = { showSendMessageSheet = true }
+                        icon = Icons.Default.Share,
+                        text = "Share Family Link",
+                        onClick = onShareFamilyLink
                     )
-                }
 
-                ActionItem(
-                    icon = Icons.Default.Share,
-                    text = "Share Family Link",
-                    onClick = onShareFamilyLink
-                )
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Button Join/Leave
-                if (!isJoined) {
-                    Surface(
-                        color = Orange50,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(modifier = Modifier.padding(10.dp)) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = Orange600,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "Join this family to see member details and map interaction.",
-                                fontSize = 15.sp
-                            )
+                    // Button Join/Leave
+                    if (!isJoined) {
+                        Surface(
+                            color = Orange50,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(modifier = Modifier.padding(10.dp)) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = Orange600,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "Join this family to see member details and map interaction.",
+                                    fontSize = 15.sp
+                                )
+                            }
                         }
-                    }
-                    Button(
-                        onClick = { showJoinDialog = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Blue600,
-                            contentColor = White
-                        ),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 15.dp)
-                            .height(52.dp)
-                    ) {
-                        Text("Join Family")
-                    }
-                } else {
-                    Button(
-                        onClick = { showLeaveDialog = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Red600,
-                            contentColor = White
-                        ),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp)
-                            .padding(bottom = 15.dp)
-                    ) {
-                        Text("Leave Family")
+                        Button(
+                            onClick = { showJoinDialog = true },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Blue600,
+                                contentColor = White
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 15.dp)
+                                .height(52.dp)
+                        ) {
+                            Text("Join Family")
+                        }
+                    } else {
+                        Button(
+                            onClick = { showLeaveDialog = true },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Red600,
+                                contentColor = White
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp)
+                                .padding(bottom = 15.dp)
+                        ) {
+                            Text("Leave Family")
+                        }
                     }
                 }
             }
